@@ -203,11 +203,11 @@ public class KnoxCLI extends Configured implements Tool {
     } catch (ServiceLifecycleException sle) {
       out.println("ERROR: Internal Error: Please refer to the knoxcli.log " +
           "file for details. " + sle.getMessage());
-    } catch (Exception e) {
+    } /*catch (Exception e) {
       e.printStackTrace( err );
       err.flush();
       return -3;
-    }
+    }*/
     return exitCode;
   }
 
