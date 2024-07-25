@@ -646,17 +646,15 @@ public class DefaultTopologyServiceTest {
       EasyMock.replay(config);
 
       TopologyService ts = new DefaultTopologyService();
-      ts.init(config, Collections.emptyMap());
-
       ClusterConfigurationMonitorService ccms = new DefaultClusterConfigurationMonitorService();
-      ccms.init(config, Collections.emptyMap());
-
-      // GatewayServices mock
       GatewayServices gws = EasyMock.createNiceMock(GatewayServices.class);
       EasyMock.expect(gws.getService(ServiceType.TOPOLOGY_SERVICE)).andReturn(ts).anyTimes();
       EasyMock.expect(gws.getService(ServiceType.CLUSTER_CONFIGURATION_MONITOR_SERVICE)).andReturn(ccms).anyTimes();
       EasyMock.replay(gws);
       setGatewayServices(gws);
+
+      ts.init(config, Collections.emptyMap());
+      ccms.init(config, Collections.emptyMap());
 
       // Write out the referenced provider config first
       createFile(sharedProvidersDir,
