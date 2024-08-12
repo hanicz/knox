@@ -138,4 +138,7 @@ public interface SpiGatewayMessages {
 
   @Message( level = MessageLevel.INFO, text = "Closing SSE connection" )
   void sseConnectionClose();
+
+  @Message( level = MessageLevel.WARN, text = "SSE connection cancelled" )
+  void sseConnectionCancelled();
 }
