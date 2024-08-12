@@ -17,7 +17,11 @@
  */
 package org.apache.knox.gateway.sse;
 
-import org.apache.http.*;
+import org.apache.http.Header;
+import org.apache.http.HeaderIterator;
+import org.apache.http.HttpResponse;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.StatusLine;
 import org.apache.http.message.BasicHttpResponse;
 
 import java.util.Locale;

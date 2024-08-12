@@ -21,7 +21,11 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.*;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
@@ -51,7 +55,7 @@ import java.util.concurrent.TimeUnit;
 public class SSEDispatch extends ConfigurableDispatch {
 
     private CloseableHttpAsyncClient asyncClient;
-    private final static String TEXT_EVENT_STREAM_VALUE = "text/event-stream";
+    private static final String TEXT_EVENT_STREAM_VALUE = "text/event-stream";
 
     @Override
     public void init() {
@@ -197,7 +201,7 @@ public class SSEDispatch extends ConfigurableDispatch {
         private final HttpServletResponse outboundResponse;
         private final URI url;
 
-        public SSECharConsumer(BlockingQueue<SSEvent> eventQueue, HttpServletResponse outboundResponse, URI url) {
+        SSECharConsumer(BlockingQueue<SSEvent> eventQueue, HttpServletResponse outboundResponse, URI url) {
             this.eventQueue = eventQueue;
             this.outboundResponse = outboundResponse;
             this.url = url;
