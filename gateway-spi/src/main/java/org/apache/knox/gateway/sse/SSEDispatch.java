@@ -22,8 +22,8 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.concurrent.FutureCallback;
@@ -105,6 +105,7 @@ public class SSEDispatch extends ConfigurableDispatch {
             throws IOException {
         final BlockingQueue<SSEvent> eventQueue = new LinkedBlockingQueue<>();
         final HttpPatch httpPatchRequest = new HttpPatch(url);
+        httpPatchRequest.abort();
         this.addAcceptHeader(httpPatchRequest);
         this.copyRequestHeaderFields(httpPatchRequest, inboundRequest);
         HttpEntity entity = this.createRequestEntity(inboundRequest);
@@ -118,21 +119,25 @@ public class SSEDispatch extends ConfigurableDispatch {
         AsyncCharConsumer<SSEResponse> consumer = new SSECharConsumer(eventQueue, outboundResponse, outboundRequest.getURI());
         Future<SSEResponse> sseConnection = this.getSSEConnection(producer, consumer, outboundRequest);
 
-        this.pollEventQueue(eventQueue, sseConnection, outboundResponse);
+        this.pollEventQueue(eventQueue, sseConnection, outboundResponse, outboundRequest);
     }
 
     private Future<SSEResponse> getSSEConnection(HttpAsyncRequestProducer producer, AsyncCharConsumer<SSEResponse> consumer, HttpUriRequest outboundRequest) {
         LOG.dispatchRequest(outboundRequest.getMethod(), outboundRequest.getURI());
         auditor.audit(Action.DISPATCH, outboundRequest.getURI().toString(), ResourceType.URI, ActionOutcome.UNAVAILABLE, RES.requestMethod(outboundRequest.getMethod()));
         return asyncClient.execute(producer, consumer, new FutureCallback<SSEResponse>() {
+
+            @Override
             public void completed(final SSEResponse response) {
                 LOG.sseConnectionDone();
             }
 
+            @Override
             public void failed(final Exception ex) {
                 LOG.sseConnectionError(ex.getMessage());
             }
 
+            @Override
             public void cancelled() {
                 LOG.sseConnectionCancelled();
             }
@@ -166,7 +171,8 @@ public class SSEDispatch extends ConfigurableDispatch {
         return (statusCode >= HttpStatus.SC_OK && statusCode < 300);
     }
 
-    private void pollEventQueue(BlockingQueue<SSEvent> eventQueue, Future<SSEResponse> sseConnection, HttpServletResponse outboundResponse) {
+    private void pollEventQueue(BlockingQueue<SSEvent> eventQueue, Future<SSEResponse> sseConnection, HttpServletResponse outboundResponse,
+                                HttpUriRequest outboundRequest) {
         try {
             PrintWriter writer = outboundResponse.getWriter();
             while (!sseConnection.isDone()) {
@@ -188,9 +194,10 @@ public class SSEDispatch extends ConfigurableDispatch {
         } catch (InterruptedException | IOException e) {
             LOG.errorWritingOutputStream(e);
         } finally {
-            if (!sseConnection.isDone()) {
+            if (!sseConnection.isDone() && !outboundRequest.isAborted()) {
                 LOG.sseConnectionClose();
-                sseConnection.cancel(true);
+                System.out.println("Aborting");
+                outboundRequest.abort();
             }
         }
     }

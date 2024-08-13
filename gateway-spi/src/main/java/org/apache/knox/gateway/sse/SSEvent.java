@@ -39,6 +39,18 @@ public class SSEvent {
         this.id = id;
     }
 
+    public String getData() {
+        return data;
+    }
+
+    public String getEvent() {
+        return event;
+    }
+
+    public String getId() {
+        return id;
+    }
+
     @Override
     public String toString() {
         //TODO: Handle case if there is no id

@@ -1555,6 +1555,11 @@
                 <artifactId>httpasyncclient</artifactId>
                 <version>${asynchttpclient.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore-nio</artifactId>
+                <version>${httpcore.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>joda-time</groupId>

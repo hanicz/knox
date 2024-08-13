@@ -80,7 +80,6 @@ public class SSEEntity extends AbstractHttpEntity {
 
         ssEvent.setData(data.toString());
         eventQueue.add(ssEvent);
-        System.out.println(ssEvent);
     }
 
     @Override
