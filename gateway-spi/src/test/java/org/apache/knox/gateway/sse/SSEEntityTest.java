@@ -27,6 +27,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
@@ -91,10 +92,27 @@ public class SSEEntityTest {
     }
 
     @Test
+    public void parseEventWithSpecialChars() {
+        BlockingQueue<SSEvent> eventQueue = new LinkedBlockingQueue<>();
+        SSEEntity sseEntity = new SSEEntity(entityMock, eventQueue);
+        String unprocessedEvent = "id: 75a0a510-0065-498f:be39-c6f42a3fe4af\ndata: data:{\"records\":[{\"col_str\":\"0e01eeef73f6833a98e1df6a5a00ea46f5b52dbee27ee89ebce894aaa555c90130b08fae8aaf600ef845b774ab0082fcaf8c\",\"col_int\":-580163093,\"col_ts\":\"2024-08-14T07:41:15.125\"}],\"job_status\":\"RUNNING\",\"end_of_samples\":false}\n\n";
+        CharBuffer cb = CharBuffer.wrap(unprocessedEvent);
+
+        sseEntity.readCharBuffer(cb);
+
+        assertFalse(eventQueue.isEmpty());
+
+        SSEvent actualSSEvent = eventQueue.peek();
+        assertEquals("75a0a510-0065-498f:be39-c6f42a3fe4af", actualSSEvent.getId());
+        assertNull(actualSSEvent.getEvent());
+        assertEquals("data:{\"records\":[{\"col_str\":\"0e01eeef73f6833a98e1df6a5a00ea46f5b52dbee27ee89ebce894aaa555c90130b08fae8aaf600ef845b774ab0082fcaf8c\",\"col_int\":-580163093,\"col_ts\":\"2024-08-14T07:41:15.125\"}],\"job_status\":\"RUNNING\",\"end_of_samples\":false}", actualSSEvent.getData());
+    }
+
+    @Test
     public void invalidFormat() {
         BlockingQueue<SSEvent> eventQueue = new LinkedBlockingQueue<>();
         SSEEntity sseEntity = new SSEEntity(entityMock, eventQueue);
-        String unprocessedEvent = "id: 1\nevent: event\ndata: data\n";
+        String unprocessedEvent = "id: 1\nevent: event\ndata: data\nid: 1\nevent: event\ndata: data\n";
         CharBuffer cb = CharBuffer.wrap(unprocessedEvent);
 
         sseEntity.readCharBuffer(cb);

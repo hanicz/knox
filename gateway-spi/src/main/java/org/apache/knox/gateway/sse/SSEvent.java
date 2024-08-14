@@ -53,18 +53,27 @@ public class SSEvent {
 
     @Override
     public String toString() {
-        //TODO: Handle case if there is no id
+        boolean needNewLine = false;
         StringBuilder eventString = new StringBuilder();
+
         if (id != null && !id.isEmpty()) {
-            eventString.append("id: ");
+            eventString.append("id:");
             eventString.append(id);
+            needNewLine = true;
         }
         if (event != null && !event.isEmpty()) {
-            eventString.append("\nevent: ");
+            if(needNewLine) {
+                eventString.append("\n");
+            }
+            eventString.append("event:");
             eventString.append(event);
+            needNewLine = true;
         }
         if (data != null && !data.isEmpty()) {
-            eventString.append("\ndata: ");
+            if(needNewLine) {
+                eventString.append("\n");
+            }
+            eventString.append("data:");
             eventString.append(data);
         }
         return eventString.toString();

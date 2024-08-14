@@ -44,20 +44,21 @@ public class SSEEntity extends AbstractHttpEntity {
         }
     }
 
+    //Two new line chars (\n\n) after each other means the event is finished streaming
+    //We can process it and add it to the event queue
     private void processChar(char nextChar) {
-        if (nextChar == '\n' && previousChar == '\n') {
-            processCurrentEvent();
-            eventBuilder.setLength(0);
-            previousChar = '0';
+        if (nextChar == '\n' && this.previousChar == '\n') {
+            this.processEvent();
+            this.eventBuilder.setLength(0);
+            this.previousChar = '0';
         } else {
-            eventBuilder.append(nextChar);
-            previousChar = nextChar;
+            this.eventBuilder.append(nextChar);
+            this.previousChar = nextChar;
         }
     }
 
-    //https://www.w3.org/TR/eventsource/#parsing-an-event-stream
-    private void processCurrentEvent() {
-        String unprocessedEvent = eventBuilder.toString();
+    private void processEvent() {
+        String unprocessedEvent = this.eventBuilder.toString();
         StringBuilder data = new StringBuilder();
         SSEvent ssEvent = new SSEvent();
 

@@ -182,9 +182,8 @@ public class SSEDispatch extends ConfigurableDispatch {
                     LOG.sseConnectionTimeout();
                     continue;
                 }
-
-                writer.println();
                 writer.write(event.toString());
+                writer.println();
                 writer.println();
 
                 //Calling response.flushBuffer() instead of writer.flush().
