@@ -28,8 +28,8 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
-import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.apache.http.nio.IOControl;
+import org.apache.http.nio.client.HttpAsyncClient;
 import org.apache.http.nio.client.methods.AsyncCharConsumer;
 import org.apache.http.nio.client.methods.HttpAsyncMethods;
 import org.apache.http.nio.protocol.HttpAsyncRequestProducer;
@@ -38,7 +38,10 @@ import org.apache.knox.gateway.audit.api.Action;
 import org.apache.knox.gateway.audit.api.ActionOutcome;
 import org.apache.knox.gateway.audit.api.ResourceType;
 import org.apache.knox.gateway.dispatch.ConfigurableDispatch;
+import org.apache.knox.gateway.dispatch.DefaultHttpAsyncClientFactory;
+import org.apache.knox.gateway.dispatch.HttpAsyncClientFactory;
 
+import javax.servlet.FilterConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -54,13 +57,16 @@ import java.util.concurrent.TimeUnit;
 
 public class SSEDispatch extends ConfigurableDispatch {
 
-    private CloseableHttpAsyncClient asyncClient;
+    private final HttpAsyncClient asyncClient;
     private static final String TEXT_EVENT_STREAM_VALUE = "text/event-stream";
 
-    @Override
-    public void init() {
-        this.asyncClient = HttpAsyncClients.createDefault();
-        this.asyncClient.start();
+    public SSEDispatch(FilterConfig filterConfig) {
+        HttpAsyncClientFactory asyncClientFactory = new DefaultHttpAsyncClientFactory();
+        this.asyncClient = asyncClientFactory.createAsyncHttpClient(filterConfig);
+
+        if (asyncClient instanceof CloseableHttpAsyncClient) {
+            ((CloseableHttpAsyncClient) this.asyncClient).start();
+        }
     }
 
     @Override
@@ -171,12 +177,12 @@ public class SSEDispatch extends ConfigurableDispatch {
         return (statusCode >= HttpStatus.SC_OK && statusCode < 300);
     }
 
-    private void pollEventQueue(BlockingQueue<SSEvent> eventQueue, Future<SSEResponse> sseConnection, HttpServletResponse outboundResponse,
-                                HttpUriRequest outboundRequest) {
+    private void pollEventQueue(BlockingQueue<SSEvent> eventQueue, Future<SSEResponse> sseConnection,
+                                HttpServletResponse outboundResponse, HttpUriRequest outboundRequest) {
         try {
             PrintWriter writer = outboundResponse.getWriter();
             while (!sseConnection.isDone()) {
-                SSEvent event = eventQueue.poll(10L, TimeUnit.SECONDS);
+                SSEvent event = eventQueue.poll(2L, TimeUnit.SECONDS);
 
                 if (event == null) {
                     LOG.sseConnectionTimeout();
@@ -195,7 +201,6 @@ public class SSEDispatch extends ConfigurableDispatch {
         } finally {
             if (!sseConnection.isDone() && !outboundRequest.isAborted()) {
                 LOG.sseConnectionClose();
-                System.out.println("Aborting");
                 outboundRequest.abort();
             }
         }
@@ -235,6 +240,17 @@ public class SSEDispatch extends ConfigurableDispatch {
         @Override
         protected SSEResponse buildResult(final HttpContext context) {
             return this.sseResponse;
+        }
+    }
+
+    @Override
+    public void destroy() {
+        try {
+            if (this.asyncClient != null && asyncClient instanceof CloseableHttpAsyncClient) {
+                ((CloseableHttpAsyncClient) asyncClient).close();
+            }
+        } catch (IOException e) {
+            LOG.errorClosingHttpClient(e);
         }
     }
 }

@@ -17,27 +17,7 @@
  */
 package org.apache.knox.gateway.dispatch;
 
-import java.io.IOException;
-import java.security.KeyStore;
-import java.security.Principal;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-
-import javax.net.ssl.SSLContext;
-import javax.servlet.FilterConfig;
-
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
-import org.apache.http.ssl.SSLContextBuilder;
-import org.apache.knox.gateway.services.ServiceType;
-import org.apache.knox.gateway.services.security.AliasService;
-import org.apache.knox.gateway.services.security.KeystoreService;
-import org.apache.knox.gateway.SpiGatewayMessages;
-import org.apache.knox.gateway.config.GatewayConfig;
-import org.apache.knox.gateway.i18n.messages.MessagesFactory;
-import org.apache.knox.gateway.services.GatewayServices;
-import org.apache.knox.gateway.services.metrics.MetricsService;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.ProtocolException;
@@ -59,17 +39,36 @@ import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
+import org.apache.knox.gateway.SpiGatewayMessages;
+import org.apache.knox.gateway.config.GatewayConfig;
+import org.apache.knox.gateway.i18n.messages.MessagesFactory;
+import org.apache.knox.gateway.services.GatewayServices;
+import org.apache.knox.gateway.services.ServiceType;
+import org.apache.knox.gateway.services.metrics.MetricsService;
+import org.apache.knox.gateway.services.security.AliasService;
+import org.apache.knox.gateway.services.security.KeystoreService;
 import org.joda.time.Period;
 import org.joda.time.format.PeriodFormatter;
 import org.joda.time.format.PeriodFormatterBuilder;
 
+import javax.net.ssl.SSLContext;
+import javax.servlet.FilterConfig;
+import java.io.IOException;
+import java.security.KeyStore;
+import java.security.Principal;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
 public class DefaultHttpClientFactory implements HttpClientFactory {
   private static final SpiGatewayMessages LOG = MessagesFactory.get(SpiGatewayMessages.class);
-  private static final String PARAMETER_SERVICE_ROLE = "serviceRole";
+  protected static final String PARAMETER_SERVICE_ROLE = "serviceRole";
   static final String PARAMETER_USE_TWO_WAY_SSL = "useTwoWaySsl";
   /* retry in case of NoHttpResponseException */
   static final String PARAMETER_RETRY_COUNT = "retryCount";
@@ -255,7 +254,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     return builder.build();
   }
 
-  private static class NoCookieStore implements CookieStore {
+  protected static class NoCookieStore implements CookieStore {
     @Override
     public void addCookie(Cookie cookie) {
       //no op
@@ -277,7 +276,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     }
   }
 
-  private static class NeverRedirectStrategy implements RedirectStrategy {
+  protected static class NeverRedirectStrategy implements RedirectStrategy {
     @Override
     public boolean isRedirected( HttpRequest request, HttpResponse response, HttpContext context )
         throws ProtocolException {
@@ -298,7 +297,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     }
   }
 
-  private static class UseJaasCredentials implements Credentials {
+  protected static class UseJaasCredentials implements Credentials {
 
     @Override
     public String getPassword() {
@@ -312,7 +311,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
   }
 
-  private int getMaxConnections( FilterConfig filterConfig ) {
+  protected int getMaxConnections( FilterConfig filterConfig ) {
     int maxConnections = 32;
     GatewayConfig config =
         (GatewayConfig)filterConfig.getServletContext().getAttribute( GatewayConfig.GATEWAY_CONFIG_ATTRIBUTE );
@@ -330,7 +329,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     return maxConnections;
   }
 
-  private static int getConnectionTimeout( FilterConfig filterConfig ) {
+  protected static int getConnectionTimeout( FilterConfig filterConfig ) {
     int timeout = -1;
     GatewayConfig globalConfig =
         (GatewayConfig)filterConfig.getServletContext().getAttribute( GatewayConfig.GATEWAY_CONFIG_ATTRIBUTE );
@@ -348,7 +347,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     return timeout;
   }
 
-  private static int getSocketTimeout( FilterConfig filterConfig ) {
+  protected static int getSocketTimeout( FilterConfig filterConfig ) {
     int timeout = -1;
     GatewayConfig globalConfig =
         (GatewayConfig)filterConfig.getServletContext().getAttribute( GatewayConfig.GATEWAY_CONFIG_ATTRIBUTE );
@@ -366,7 +365,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     return timeout;
   }
 
-  private static long parseTimeout( String s ) {
+  protected static long parseTimeout( String s ) {
     PeriodFormatter f = new PeriodFormatterBuilder()
         .appendMinutes().appendSuffix("m"," min")
         .appendSeconds().appendSuffix("s"," sec")
@@ -375,7 +374,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     return p.toStandardDuration().getMillis();
   }
 
-  private static String getCookieSpec(FilterConfig filterConfig) {
+  protected static String getCookieSpec(FilterConfig filterConfig) {
     String cookieSpec = filterConfig.getInitParameter("httpclient.cookieSpec");
     if (StringUtils.isNotBlank(cookieSpec)) {
       return cookieSpec;
