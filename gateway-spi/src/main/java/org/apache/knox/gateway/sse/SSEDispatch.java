@@ -41,19 +41,15 @@ import org.apache.knox.gateway.dispatch.ConfigurableDispatch;
 import org.apache.knox.gateway.dispatch.DefaultHttpAsyncClientFactory;
 import org.apache.knox.gateway.dispatch.HttpAsyncClientFactory;
 
+import javax.servlet.AsyncContext;
 import javax.servlet.FilterConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 public class SSEDispatch extends ConfigurableDispatch {
 
@@ -72,79 +68,79 @@ public class SSEDispatch extends ConfigurableDispatch {
     @Override
     public void doGet(URI url, HttpServletRequest inboundRequest, HttpServletResponse outboundResponse)
             throws IOException {
-        final BlockingQueue<SSEvent> eventQueue = new LinkedBlockingQueue<>();
         final HttpGet httpGetRequest = new HttpGet(url);
         this.addAcceptHeader(httpGetRequest);
         this.copyRequestHeaderFields(httpGetRequest, inboundRequest);
 
-        this.executeRequest(httpGetRequest, outboundResponse, eventQueue);
+        this.executeRequest(httpGetRequest, outboundResponse, inboundRequest);
     }
 
     @Override
     public void doPost(URI url, HttpServletRequest inboundRequest, HttpServletResponse outboundResponse)
             throws IOException, URISyntaxException {
-        final BlockingQueue<SSEvent> eventQueue = new LinkedBlockingQueue<>();
         final HttpPost httpPostRequest = new HttpPost(url);
         this.addAcceptHeader(httpPostRequest);
         this.copyRequestHeaderFields(httpPostRequest, inboundRequest);
         HttpEntity entity = this.createRequestEntity(inboundRequest);
         httpPostRequest.setEntity(entity);
 
-        this.executeRequest(httpPostRequest, outboundResponse, eventQueue);
+        this.executeRequest(httpPostRequest, outboundResponse, inboundRequest);
     }
 
     @Override
     public void doPut(URI url, HttpServletRequest inboundRequest, HttpServletResponse outboundResponse)
             throws IOException {
-        final BlockingQueue<SSEvent> eventQueue = new LinkedBlockingQueue<>();
         final HttpPut httpPutRequest = new HttpPut(url);
         this.addAcceptHeader(httpPutRequest);
         this.copyRequestHeaderFields(httpPutRequest, inboundRequest);
         HttpEntity entity = this.createRequestEntity(inboundRequest);
         httpPutRequest.setEntity(entity);
 
-        this.executeRequest(httpPutRequest, outboundResponse, eventQueue);
+        this.executeRequest(httpPutRequest, outboundResponse, inboundRequest);
     }
 
     @Override
     public void doPatch(URI url, HttpServletRequest inboundRequest, HttpServletResponse outboundResponse)
             throws IOException {
-        final BlockingQueue<SSEvent> eventQueue = new LinkedBlockingQueue<>();
         final HttpPatch httpPatchRequest = new HttpPatch(url);
-        httpPatchRequest.abort();
         this.addAcceptHeader(httpPatchRequest);
         this.copyRequestHeaderFields(httpPatchRequest, inboundRequest);
         HttpEntity entity = this.createRequestEntity(inboundRequest);
         httpPatchRequest.setEntity(entity);
 
-        this.executeRequest(httpPatchRequest, outboundResponse, eventQueue);
+        this.executeRequest(httpPatchRequest, outboundResponse, inboundRequest);
     }
 
-    private void executeRequest(HttpUriRequest outboundRequest, HttpServletResponse outboundResponse, BlockingQueue<SSEvent> eventQueue) {
+    private void executeRequest(HttpUriRequest outboundRequest, HttpServletResponse outboundResponse, HttpServletRequest inboundRequest) {
+        AsyncContext asyncContext = inboundRequest.startAsync();
+        //No timeout
+        asyncContext.setTimeout(0);
+
         HttpAsyncRequestProducer producer = HttpAsyncMethods.create(outboundRequest);
-        AsyncCharConsumer<SSEResponse> consumer = new SSECharConsumer(eventQueue, outboundResponse, outboundRequest.getURI());
-        Future<SSEResponse> sseConnection = this.getSSEConnection(producer, consumer, outboundRequest);
-
-        this.pollEventQueue(eventQueue, sseConnection, outboundResponse, outboundRequest);
+        AsyncCharConsumer<SSEResponse> consumer = new SSECharConsumer(outboundResponse, outboundRequest.getURI(), asyncContext);
+        this.getSSEConnection(producer, consumer, outboundRequest);
     }
 
-    private Future<SSEResponse> getSSEConnection(HttpAsyncRequestProducer producer, AsyncCharConsumer<SSEResponse> consumer, HttpUriRequest outboundRequest) {
+    private void getSSEConnection(HttpAsyncRequestProducer producer, AsyncCharConsumer<SSEResponse> consumer, HttpUriRequest outboundRequest) {
         LOG.dispatchRequest(outboundRequest.getMethod(), outboundRequest.getURI());
         auditor.audit(Action.DISPATCH, outboundRequest.getURI().toString(), ResourceType.URI, ActionOutcome.UNAVAILABLE, RES.requestMethod(outboundRequest.getMethod()));
-        return asyncClient.execute(producer, consumer, new FutureCallback<SSEResponse>() {
+        asyncClient.execute(producer, consumer, new FutureCallback<SSEResponse>() {
 
             @Override
             public void completed(final SSEResponse response) {
+                closeProducer(producer);
                 LOG.sseConnectionDone();
             }
 
             @Override
             public void failed(final Exception ex) {
+                closeProducer(producer);
                 LOG.sseConnectionError(ex.getMessage());
             }
 
             @Override
             public void cancelled() {
+                closeProducer(producer);
                 LOG.sseConnectionCancelled();
             }
         });
@@ -177,50 +173,29 @@ public class SSEDispatch extends ConfigurableDispatch {
         return (statusCode >= HttpStatus.SC_OK && statusCode < 300);
     }
 
-    private void pollEventQueue(BlockingQueue<SSEvent> eventQueue, Future<SSEResponse> sseConnection,
-                                HttpServletResponse outboundResponse, HttpUriRequest outboundRequest) {
+    private void closeProducer(HttpAsyncRequestProducer producer) {
         try {
-            PrintWriter writer = outboundResponse.getWriter();
-            while (!sseConnection.isDone()) {
-                SSEvent event = eventQueue.poll(2L, TimeUnit.SECONDS);
-
-                if (event == null) {
-                    LOG.sseConnectionTimeout();
-                    continue;
-                }
-                writer.write(event.toString());
-                writer.println();
-                writer.println();
-
-                //Calling response.flushBuffer() instead of writer.flush().
-                //This way an exception is thrown if the connection is already closed on the client side.
-                outboundResponse.flushBuffer();
-            }
-        } catch (InterruptedException | IOException e) {
-            LOG.errorWritingOutputStream(e);
-        } finally {
-            if (!sseConnection.isDone() && !outboundRequest.isAborted()) {
-                LOG.sseConnectionClose();
-                outboundRequest.abort();
-            }
+            producer.close();
+        } catch (IOException e) {
+            LOG.sseProducerCloseError(e);
         }
     }
 
     private class SSECharConsumer extends AsyncCharConsumer<SSEResponse> {
         private SSEResponse sseResponse;
-        private final BlockingQueue<SSEvent> eventQueue;
         private final HttpServletResponse outboundResponse;
         private final URI url;
+        private final AsyncContext asyncContext;
 
-        SSECharConsumer(BlockingQueue<SSEvent> eventQueue, HttpServletResponse outboundResponse, URI url) {
-            this.eventQueue = eventQueue;
+        SSECharConsumer(HttpServletResponse outboundResponse, URI url, AsyncContext asyncContext) {
             this.outboundResponse = outboundResponse;
             this.url = url;
+            this.asyncContext = asyncContext;
         }
 
         @Override
         protected void onResponseReceived(final HttpResponse inboundResponse) {
-            this.sseResponse = new SSEResponse(inboundResponse, eventQueue);
+            this.sseResponse = new SSEResponse(inboundResponse);
             if (isSuccessful(inboundResponse.getStatusLine().getStatusCode())) {
                 handleOkResponse(outboundResponse, url, inboundResponse);
             } else {
@@ -230,16 +205,25 @@ public class SSEDispatch extends ConfigurableDispatch {
 
         @Override
         protected void onCharReceived(final CharBuffer buf, final IOControl ioctl) {
-            this.sseResponse.getEntity().readCharBuffer(buf);
+            try {
+                if (this.sseResponse.getEntity().readCharBuffer(buf)) {
+                    this.sseResponse.getEntity().sendEvent(this.asyncContext);
+                }
+            } catch (InterruptedException | IOException e) {
+                LOG.errorWritingOutputStream(e);
+                throw new SSEException(e.getMessage(), e);
+            }
         }
 
         @Override
         protected void releaseResources() {
+            this.asyncContext.complete();
         }
 
         @Override
         protected SSEResponse buildResult(final HttpContext context) {
             return this.sseResponse;
+
         }
     }
 

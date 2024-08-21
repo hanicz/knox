@@ -208,4 +208,11 @@ limitations under the License.
         <description>Add service name to x-forward-context header for the list of services defined above.</description>
     </property>
 
+    <!-- Async support required for SSE support -->
+    <property>
+        <name>gateway.servlet.async.supported</name>
+        <value>false</value>
+        <description>Enable/Disable async support.</description>
+    </property>
+
 </configuration>

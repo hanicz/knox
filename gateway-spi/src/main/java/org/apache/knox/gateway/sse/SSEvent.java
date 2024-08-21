@@ -62,7 +62,7 @@ public class SSEvent {
             needNewLine = true;
         }
         if (event != null && !event.isEmpty()) {
-            if(needNewLine) {
+            if (needNewLine) {
                 eventString.append('\n');
             }
             eventString.append("event:");
@@ -70,7 +70,7 @@ public class SSEvent {
             needNewLine = true;
         }
         if (data != null && !data.isEmpty()) {
-            if(needNewLine) {
+            if (needNewLine) {
                 eventString.append('\n');
             }
             eventString.append("data:");

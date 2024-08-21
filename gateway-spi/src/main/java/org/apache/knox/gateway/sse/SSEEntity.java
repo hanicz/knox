@@ -20,11 +20,13 @@ package org.apache.knox.gateway.sse;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.AbstractHttpEntity;
 
+import javax.servlet.AsyncContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.CharBuffer;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class SSEEntity extends AbstractHttpEntity {
 
@@ -33,21 +35,22 @@ public class SSEEntity extends AbstractHttpEntity {
     private final HttpEntity httpEntity;
     private char previousChar = '0';
 
-    public SSEEntity(HttpEntity httpEntity, BlockingQueue<SSEvent> eventQueue) {
+    public SSEEntity(HttpEntity httpEntity) {
         this.httpEntity = httpEntity;
-        this.eventQueue = eventQueue;
+        this.eventQueue = new LinkedBlockingQueue<>();
     }
 
-    public void readCharBuffer(CharBuffer charBuffer) {
+    public boolean readCharBuffer(CharBuffer charBuffer) {
         while (charBuffer.hasRemaining()) {
             processChar(charBuffer.get());
         }
+        return !this.eventQueue.isEmpty();
     }
 
     //Two new line chars (\n\n) after each other means the event is finished streaming
     //We can process it and add it to the event queue
     private void processChar(char nextChar) {
-        if (nextChar == '\n' && this.previousChar == '\n') {
+        if (isNewLineChar(nextChar) && isNewLineChar(this.previousChar)) {
             this.processEvent();
             this.eventBuilder.setLength(0);
             this.previousChar = '0';
@@ -55,6 +58,10 @@ public class SSEEntity extends AbstractHttpEntity {
             this.eventBuilder.append(nextChar);
             this.previousChar = nextChar;
         }
+    }
+
+    private boolean isNewLineChar(char c) {
+        return c == '\n' || c == '\r' || c == '\u0085' || c == '\u2028' || c == '\u2029';
     }
 
     private void processEvent() {
@@ -81,6 +88,22 @@ public class SSEEntity extends AbstractHttpEntity {
 
         ssEvent.setData(data.toString());
         eventQueue.add(ssEvent);
+    }
+
+    public void sendEvent(AsyncContext asyncContext) throws IOException, InterruptedException {
+        while (!eventQueue.isEmpty()) {
+            SSEvent event = eventQueue.take();
+            asyncContext.getResponse().getWriter().write(event.toString());
+            asyncContext.getResponse().getWriter().println('\n');
+
+            //Calling response.flushBuffer() instead of writer.flush().
+            //This way an exception is thrown if the connection is already closed on the client side.
+            asyncContext.getResponse().flushBuffer();
+        }
+    }
+
+    public BlockingQueue<SSEvent> getEventQueue() {
+        return eventQueue;
     }
 
     @Override

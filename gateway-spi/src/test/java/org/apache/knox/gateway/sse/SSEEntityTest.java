@@ -23,7 +23,6 @@ import org.junit.Test;
 
 import java.nio.CharBuffer;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -37,8 +36,8 @@ public class SSEEntityTest {
 
     @Test
     public void parseSingleEvent() {
-        BlockingQueue<SSEvent> eventQueue = new LinkedBlockingQueue<>();
-        SSEEntity sseEntity = new SSEEntity(entityMock, eventQueue);
+        SSEEntity sseEntity = new SSEEntity(entityMock);
+        BlockingQueue<SSEvent> eventQueue = sseEntity.getEventQueue();
         String unprocessedEvent = "id: 1\nevent: event\ndata: data\n\n";
         CharBuffer cb = CharBuffer.wrap(unprocessedEvent);
 
@@ -54,8 +53,8 @@ public class SSEEntityTest {
 
     @Test
     public void parseMultipleEvents() {
-        BlockingQueue<SSEvent> eventQueue = new LinkedBlockingQueue<>();
-        SSEEntity sseEntity = new SSEEntity(this.entityMock, eventQueue);
+        SSEEntity sseEntity = new SSEEntity(this.entityMock);
+        BlockingQueue<SSEvent> eventQueue = sseEntity.getEventQueue();
         String unprocessedEvents = "id: 1\nevent: event\ndata: data\n\nid: 2\nevent: event2\ndata: data2\n\nid: 3\nevent: event3\ndata: data3\n\n";
         CharBuffer cb = CharBuffer.wrap(unprocessedEvents);
 
@@ -81,8 +80,8 @@ public class SSEEntityTest {
 
     @Test
     public void missingNewLine() {
-        BlockingQueue<SSEvent> eventQueue = new LinkedBlockingQueue<>();
-        SSEEntity sseEntity = new SSEEntity(entityMock, eventQueue);
+        SSEEntity sseEntity = new SSEEntity(entityMock);
+        BlockingQueue<SSEvent> eventQueue = sseEntity.getEventQueue();
         String unprocessedEvent = "id: 1\nevent: event\ndata: data\n";
         CharBuffer cb = CharBuffer.wrap(unprocessedEvent);
 
@@ -93,8 +92,8 @@ public class SSEEntityTest {
 
     @Test
     public void parseEventWithSpecialChars() {
-        BlockingQueue<SSEvent> eventQueue = new LinkedBlockingQueue<>();
-        SSEEntity sseEntity = new SSEEntity(entityMock, eventQueue);
+        SSEEntity sseEntity = new SSEEntity(entityMock);
+        BlockingQueue<SSEvent> eventQueue = sseEntity.getEventQueue();
         String unprocessedEvent = "id: 75a0a510-0065-498f:be39-c6f42a3fe4af\ndata: data:{\"records\":[{\"col_str\":\"0e01eeef73f6833a98e1df6a5a00ea46f5b52dbee27ee89ebce894aaa555c90130b08fae8aaf600ef845b774ab0082fcaf8c\",\"col_int\":-580163093,\"col_ts\":\"2024-08-14T07:41:15.125\"}],\"job_status\":\"RUNNING\",\"end_of_samples\":false}\n\n";
         CharBuffer cb = CharBuffer.wrap(unprocessedEvent);
 
@@ -110,13 +109,45 @@ public class SSEEntityTest {
 
     @Test
     public void invalidFormat() {
-        BlockingQueue<SSEvent> eventQueue = new LinkedBlockingQueue<>();
-        SSEEntity sseEntity = new SSEEntity(entityMock, eventQueue);
+        SSEEntity sseEntity = new SSEEntity(entityMock);
+        BlockingQueue<SSEvent> eventQueue = sseEntity.getEventQueue();
         String unprocessedEvent = "id: 1\nevent: event\ndata: data\nid: 1\nevent: event\ndata: data\n";
         CharBuffer cb = CharBuffer.wrap(unprocessedEvent);
 
         sseEntity.readCharBuffer(cb);
 
         assertTrue(eventQueue.isEmpty());
+    }
+
+    @Test
+    public void parseEventsWithDifferentNewLineChars() {
+        SSEEntity sseEntity = new SSEEntity(entityMock);
+        BlockingQueue<SSEvent> eventQueue = sseEntity.getEventQueue();
+        String unprocessedEvents = "id: 1\nevent: event\ndata: data\r\nid: 2\nevent: event2\ndata: data2\u2028\nid: 3\nevent: event3\ndata: data3\u2029\nid: 4\nevent: event4\ndata: data4\u0085\n";
+        CharBuffer cb = CharBuffer.wrap(unprocessedEvents);
+
+        sseEntity.readCharBuffer(cb);
+
+        assertEquals(4, eventQueue.size());
+
+        SSEvent actualSSEvent = eventQueue.poll();
+        assertEquals("1", actualSSEvent.getId());
+        assertEquals("event", actualSSEvent.getEvent());
+        assertEquals("data", actualSSEvent.getData());
+
+        actualSSEvent = eventQueue.poll();
+        assertEquals("2", actualSSEvent.getId());
+        assertEquals("event2", actualSSEvent.getEvent());
+        assertEquals("data2", actualSSEvent.getData());
+
+        actualSSEvent = eventQueue.poll();
+        assertEquals("3", actualSSEvent.getId());
+        assertEquals("event3", actualSSEvent.getEvent());
+        assertEquals("data3", actualSSEvent.getData());
+
+        actualSSEvent = eventQueue.poll();
+        assertEquals("4", actualSSEvent.getId());
+        assertEquals("event4", actualSSEvent.getEvent());
+        assertEquals("data4", actualSSEvent.getData());
     }
 }

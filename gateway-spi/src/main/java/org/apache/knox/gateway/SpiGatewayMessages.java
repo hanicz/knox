@@ -124,21 +124,18 @@ public interface SpiGatewayMessages {
   @Message( level = MessageLevel.ERROR, text = "No valid principal found" )
   void noPrincipalFound();
 
-  @Message( level = MessageLevel.INFO, text = "Every event was read from the connection" )
+  @Message( level = MessageLevel.INFO, text = "Every event was read from the stream" )
   void sseConnectionDone();
 
   @Message( level = MessageLevel.ERROR, text = "Error during SSE connection: {0}" )
   void sseConnectionError(String error);
 
-  @Message( level = MessageLevel.DEBUG, text = "No response inside timeout, checking if connection is still open" )
-  void sseConnectionTimeout();
-
   @Message( level = MessageLevel.ERROR, text = "Error writing into the output stream : {1}" )
   void errorWritingOutputStream(@StackTrace(level=MessageLevel.ERROR) Exception e);
 
-  @Message( level = MessageLevel.INFO, text = "Closing SSE connection" )
-  void sseConnectionClose();
-
   @Message( level = MessageLevel.WARN, text = "SSE connection cancelled" )
   void sseConnectionCancelled();
+
+  @Message( level = MessageLevel.ERROR, text = "Unable to close producer" )
+  void sseProducerCloseError(@StackTrace(level=MessageLevel.ERROR) Exception e);
 }

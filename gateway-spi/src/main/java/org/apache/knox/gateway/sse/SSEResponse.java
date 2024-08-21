@@ -25,16 +25,15 @@ import org.apache.http.StatusLine;
 import org.apache.http.message.BasicHttpResponse;
 
 import java.util.Locale;
-import java.util.concurrent.BlockingQueue;
 
 public class SSEResponse extends BasicHttpResponse {
     private final HttpResponse inboundResponse;
     private final SSEEntity entity;
 
-    public SSEResponse(HttpResponse inboundResponse, BlockingQueue<SSEvent> eventQueue) {
+    public SSEResponse(HttpResponse inboundResponse) {
         super(inboundResponse.getStatusLine());
         this.inboundResponse = inboundResponse;
-        this.entity = new SSEEntity(inboundResponse.getEntity(), eventQueue);
+        this.entity = new SSEEntity(inboundResponse.getEntity());
     }
 
     @Override
