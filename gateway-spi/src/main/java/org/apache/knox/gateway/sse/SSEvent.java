@@ -27,6 +27,12 @@ public class SSEvent {
     public SSEvent() {
     }
 
+    public SSEvent(String data, String event, String id) {
+        this.data = data;
+        this.event = event;
+        this.id = id;
+    }
+
     public void setData(String data) {
         this.data = data;
     }

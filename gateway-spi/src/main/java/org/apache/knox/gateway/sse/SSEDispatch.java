@@ -114,7 +114,7 @@ public class SSEDispatch extends ConfigurableDispatch {
     private void executeRequest(HttpUriRequest outboundRequest, HttpServletResponse outboundResponse, HttpServletRequest inboundRequest) {
         AsyncContext asyncContext = inboundRequest.startAsync();
         //No timeout
-        asyncContext.setTimeout(0);
+        asyncContext.setTimeout(0L);
 
         HttpAsyncRequestProducer producer = HttpAsyncMethods.create(outboundRequest);
         AsyncCharConsumer<SSEResponse> consumer = new SSECharConsumer(outboundResponse, outboundRequest.getURI(), asyncContext);
@@ -236,5 +236,9 @@ public class SSEDispatch extends ConfigurableDispatch {
         } catch (IOException e) {
             LOG.errorClosingHttpClient(e);
         }
+    }
+
+    public HttpAsyncClient getAsyncClient() {
+        return this.asyncClient;
     }
 }
