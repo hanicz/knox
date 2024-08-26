@@ -17,27 +17,439 @@
  */
 package org.apache.knox.gateway.sse;
 
+import org.apache.http.HttpStatus;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.knox.gateway.config.GatewayConfig;
 import org.apache.knox.gateway.services.GatewayServices;
 import org.apache.knox.gateway.services.ServiceType;
 import org.apache.knox.gateway.services.security.KeystoreService;
+import org.apache.knox.test.mock.MockServer;
+import org.apache.knox.test.mock.MockServletContext;
+import org.apache.knox.test.mock.MockServletInputStream;
+import org.easymock.EasyMock;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.servlet.AsyncContext;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class SSEDispatchTest {
 
+    private static MockServer MOCK_SSE_SERVER;
+    private static URI URL;
+
+    @BeforeClass
+    public static void setUpBeforeClass() throws Exception {
+        MOCK_SSE_SERVER = new MockServer("SSE", true);
+        URL = new URI("http://localhost:" + MOCK_SSE_SERVER.getPort() + "/sse");
+    }
+
     @Test
     public void createAndDestroyClient() throws Exception {
+        SSEDispatch sseDispatch = this.createDispatch();
+        assertNotNull(sseDispatch.getAsyncClient());
+
+        sseDispatch.destroy();
+        assertFalse(((CloseableHttpAsyncClient) sseDispatch.getAsyncClient()).isRunning());
+    }
+
+    @Test
+    public void get2xx() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        SSEDispatch sseDispatch = this.createDispatch();
+        PrintWriter printWriter = EasyMock.createNiceMock(PrintWriter.class);
+        HttpServletResponse outboundResponse = this.getServletResponse(HttpStatus.SC_OK);
+        AsyncContext asyncContext = this.getAsyncContext(latch, outboundResponse);
+        HttpServletRequest inboundRequest = this.getHttpServletRequest(asyncContext);
+
+        this.expectResponseBodyAndHeader(printWriter, outboundResponse);
+        replay(inboundRequest, asyncContext, outboundResponse, printWriter);
+
+        MOCK_SSE_SERVER.expect()
+                .method("GET")
+                .pathInfo("/sse")
+                .header("request", "header")
+                .header("Accept", "text/event-stream")
+                .respond()
+                .status(HttpStatus.SC_OK)
+                .content("id:1\ndata:data1\nevent:event1\n\ndata:data2\nevent:event2\nid:2\n\n", StandardCharsets.UTF_8)
+                .header("response", "header")
+                .contentType("text/event-stream");
+
+        sseDispatch.doGet(URL, inboundRequest, outboundResponse);
+
+        latch.await(1L, TimeUnit.SECONDS);
+        EasyMock.verify(asyncContext, outboundResponse, inboundRequest, printWriter);
+        assertTrue(MOCK_SSE_SERVER.isEmpty());
+    }
+
+    @Test
+    public void get4xx() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        SSEDispatch sseDispatch = this.createDispatch();
+        HttpServletResponse outboundResponse = this.getServletResponse(HttpStatus.SC_BAD_REQUEST);
+        AsyncContext asyncContext = this.getAsyncContext(latch, outboundResponse);
+        HttpServletRequest inboundRequest = this.getHttpServletRequest(asyncContext);
+
+        replay(inboundRequest, asyncContext, outboundResponse);
+
+        MOCK_SSE_SERVER.expect()
+                .method("GET")
+                .pathInfo("/sse")
+                .respond()
+                .status(HttpStatus.SC_BAD_REQUEST);
+
+        sseDispatch.doGet(URL, inboundRequest, outboundResponse);
+
+        latch.await(1L, TimeUnit.SECONDS);
+        EasyMock.verify(asyncContext, outboundResponse, inboundRequest);
+        assertTrue(MOCK_SSE_SERVER.isEmpty());
+    }
+
+    @Test
+    public void get5xx() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        SSEDispatch sseDispatch = this.createDispatch();
+        HttpServletResponse outboundResponse = this.getServletResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        AsyncContext asyncContext = this.getAsyncContext(latch, outboundResponse);
+        HttpServletRequest inboundRequest = this.getHttpServletRequest(asyncContext);
+
+        replay(inboundRequest, asyncContext, outboundResponse);
+
+        MOCK_SSE_SERVER.expect()
+                .method("GET")
+                .pathInfo("/sse")
+                .respond()
+                .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+        sseDispatch.doGet(URL, inboundRequest, outboundResponse);
+
+        latch.await(1L, TimeUnit.SECONDS);
+        EasyMock.verify(asyncContext, outboundResponse, inboundRequest);
+        assertTrue(MOCK_SSE_SERVER.isEmpty());
+    }
+
+    @Test
+    public void post2xx() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        SSEDispatch sseDispatch = this.createDispatch();
+        PrintWriter printWriter = EasyMock.createNiceMock(PrintWriter.class);
+        HttpServletResponse outboundResponse = this.getServletResponse(HttpStatus.SC_OK);
+        AsyncContext asyncContext = this.getAsyncContext(latch, outboundResponse);
+        HttpServletRequest inboundRequest = this.getHttpServletRequest(asyncContext);
+
+        this.expectResponseBodyAndHeader(printWriter, outboundResponse);
+        replay(inboundRequest, asyncContext, outboundResponse, printWriter);
+
+        MOCK_SSE_SERVER.expect()
+                .method("POST")
+                .pathInfo("/sse")
+                .header("request", "header")
+                .header("Accept", "text/event-stream")
+                .content("{\"request\":\"body\"}", StandardCharsets.UTF_8)
+                .respond()
+                .status(HttpStatus.SC_OK)
+                .content("id:1\ndata:data1\nevent:event1\n\ndata:data2\nevent:event2\nid:2\n\n", StandardCharsets.UTF_8)
+                .header("response", "header")
+                .contentType("text/event-stream");
+
+        sseDispatch.doPost(URL, inboundRequest, outboundResponse);
+
+        latch.await(1L, TimeUnit.SECONDS);
+        EasyMock.verify(asyncContext, outboundResponse, inboundRequest, printWriter);
+        assertTrue(MOCK_SSE_SERVER.isEmpty());
+    }
+
+    @Test
+    public void post4xx() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        SSEDispatch sseDispatch = this.createDispatch();
+        HttpServletResponse outboundResponse = this.getServletResponse(HttpStatus.SC_NOT_FOUND);
+        AsyncContext asyncContext = this.getAsyncContext(latch, outboundResponse);
+        HttpServletRequest inboundRequest = this.getHttpServletRequest(asyncContext);
+
+        replay(inboundRequest, asyncContext, outboundResponse);
+
+        MOCK_SSE_SERVER.expect()
+                .method("POST")
+                .pathInfo("/sse")
+                .respond()
+                .status(HttpStatus.SC_NOT_FOUND);
+
+        sseDispatch.doPost(URL, inboundRequest, outboundResponse);
+
+        latch.await(1L, TimeUnit.SECONDS);
+        EasyMock.verify(asyncContext, outboundResponse, inboundRequest);
+        assertTrue(MOCK_SSE_SERVER.isEmpty());
+    }
+
+    @Test
+    public void post5xx() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        SSEDispatch sseDispatch = this.createDispatch();
+        HttpServletResponse outboundResponse = this.getServletResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        AsyncContext asyncContext = this.getAsyncContext(latch, outboundResponse);
+        HttpServletRequest inboundRequest = this.getHttpServletRequest(asyncContext);
+
+        replay(inboundRequest, asyncContext, outboundResponse);
+
+        MOCK_SSE_SERVER.expect()
+                .method("POST")
+                .pathInfo("/sse")
+                .respond()
+                .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+        sseDispatch.doPost(URL, inboundRequest, outboundResponse);
+
+        latch.await(1L, TimeUnit.SECONDS);
+        EasyMock.verify(asyncContext, outboundResponse, inboundRequest);
+        assertTrue(MOCK_SSE_SERVER.isEmpty());
+    }
+
+    @Test
+    public void put2xx() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        SSEDispatch sseDispatch = this.createDispatch();
+        PrintWriter printWriter = EasyMock.createNiceMock(PrintWriter.class);
+        HttpServletResponse outboundResponse = this.getServletResponse(HttpStatus.SC_OK);
+        AsyncContext asyncContext = this.getAsyncContext(latch, outboundResponse);
+        HttpServletRequest inboundRequest = this.getHttpServletRequest(asyncContext);
+
+        this.expectResponseBodyAndHeader(printWriter, outboundResponse);
+        replay(inboundRequest, asyncContext, outboundResponse, printWriter);
+
+        MOCK_SSE_SERVER.expect()
+                .method("PUT")
+                .pathInfo("/sse")
+                .header("request", "header")
+                .header("Accept", "text/event-stream")
+                .content("{\"request\":\"body\"}", StandardCharsets.UTF_8)
+                .respond()
+                .status(HttpStatus.SC_OK)
+                .content("id:1\ndata:data1\nevent:event1\n\ndata:data2\nevent:event2\nid:2\n\n", StandardCharsets.UTF_8)
+                .header("response", "header")
+                .contentType("text/event-stream");
+
+        sseDispatch.doPut(URL, inboundRequest, outboundResponse);
+
+        latch.await(1L, TimeUnit.SECONDS);
+        EasyMock.verify(asyncContext, outboundResponse, inboundRequest, printWriter);
+        assertTrue(MOCK_SSE_SERVER.isEmpty());
+    }
+
+    @Test
+    public void put4xx() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        SSEDispatch sseDispatch = this.createDispatch();
+        HttpServletResponse outboundResponse = this.getServletResponse(HttpStatus.SC_NOT_FOUND);
+        AsyncContext asyncContext = this.getAsyncContext(latch, outboundResponse);
+        HttpServletRequest inboundRequest = this.getHttpServletRequest(asyncContext);
+
+        replay(inboundRequest, asyncContext, outboundResponse);
+
+        MOCK_SSE_SERVER.expect()
+                .method("PUT")
+                .pathInfo("/sse")
+                .respond()
+                .status(HttpStatus.SC_NOT_FOUND);
+
+        sseDispatch.doPut(URL, inboundRequest, outboundResponse);
+
+        latch.await(1L, TimeUnit.SECONDS);
+        EasyMock.verify(asyncContext, outboundResponse, inboundRequest);
+        assertTrue(MOCK_SSE_SERVER.isEmpty());
+    }
+
+    @Test
+    public void put5xx() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        SSEDispatch sseDispatch = this.createDispatch();
+        HttpServletResponse outboundResponse = this.getServletResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        AsyncContext asyncContext = this.getAsyncContext(latch, outboundResponse);
+        HttpServletRequest inboundRequest = this.getHttpServletRequest(asyncContext);
+
+        replay(inboundRequest, asyncContext, outboundResponse);
+
+        MOCK_SSE_SERVER.expect()
+                .method("PUT")
+                .pathInfo("/sse")
+                .respond()
+                .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+        sseDispatch.doPut(URL, inboundRequest, outboundResponse);
+
+        latch.await(1L, TimeUnit.SECONDS);
+        EasyMock.verify(asyncContext, outboundResponse, inboundRequest);
+        assertTrue(MOCK_SSE_SERVER.isEmpty());
+    }
+
+    @Test
+    public void patch2xx() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        SSEDispatch sseDispatch = this.createDispatch();
+        PrintWriter printWriter = EasyMock.createNiceMock(PrintWriter.class);
+        HttpServletResponse outboundResponse = this.getServletResponse(HttpStatus.SC_OK);
+        AsyncContext asyncContext = this.getAsyncContext(latch, outboundResponse);
+        HttpServletRequest inboundRequest = this.getHttpServletRequest(asyncContext);
+
+        this.expectResponseBodyAndHeader(printWriter, outboundResponse);
+        replay(inboundRequest, asyncContext, outboundResponse, printWriter);
+
+        MOCK_SSE_SERVER.expect()
+                .method("PATCH")
+                .pathInfo("/sse")
+                .header("request", "header")
+                .header("Accept", "text/event-stream")
+                .content("{\"request\":\"body\"}", StandardCharsets.UTF_8)
+                .respond()
+                .status(HttpStatus.SC_OK)
+                .content("id:1\ndata:data1\nevent:event1\n\ndata:data2\nevent:event2\nid:2\n\n", StandardCharsets.UTF_8)
+                .header("response", "header")
+                .contentType("text/event-stream");
+
+        sseDispatch.doPatch(URL, inboundRequest, outboundResponse);
+
+        latch.await(1L, TimeUnit.SECONDS);
+        EasyMock.verify(asyncContext, outboundResponse, inboundRequest, printWriter);
+        assertTrue(MOCK_SSE_SERVER.isEmpty());
+    }
+
+    @Test
+    public void patch4xx() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        SSEDispatch sseDispatch = this.createDispatch();
+        HttpServletResponse outboundResponse = this.getServletResponse(HttpStatus.SC_NOT_FOUND);
+        AsyncContext asyncContext = this.getAsyncContext(latch, outboundResponse);
+        HttpServletRequest inboundRequest = this.getHttpServletRequest(asyncContext);
+
+        replay(inboundRequest, asyncContext, outboundResponse);
+
+        MOCK_SSE_SERVER.expect()
+                .method("PATCH")
+                .pathInfo("/sse")
+                .respond()
+                .status(HttpStatus.SC_NOT_FOUND);
+
+        sseDispatch.doPatch(URL, inboundRequest, outboundResponse);
+
+        latch.await(1L, TimeUnit.SECONDS);
+        EasyMock.verify(asyncContext, outboundResponse, inboundRequest);
+        assertTrue(MOCK_SSE_SERVER.isEmpty());
+    }
+
+    @Test
+    public void patch5xx() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        SSEDispatch sseDispatch = this.createDispatch();
+        HttpServletResponse outboundResponse = this.getServletResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        AsyncContext asyncContext = this.getAsyncContext(latch, outboundResponse);
+        HttpServletRequest inboundRequest = this.getHttpServletRequest(asyncContext);
+
+        replay(inboundRequest, asyncContext, outboundResponse);
+
+        MOCK_SSE_SERVER.expect()
+                .method("PATCH")
+                .pathInfo("/sse")
+                .respond()
+                .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+        sseDispatch.doPatch(URL, inboundRequest, outboundResponse);
+
+        latch.await(1L, TimeUnit.SECONDS);
+        EasyMock.verify(asyncContext, outboundResponse, inboundRequest);
+        assertTrue(MOCK_SSE_SERVER.isEmpty());
+    }
+
+    @Test
+    public void serverNotAvailable() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        SSEDispatch sseDispatch = this.createDispatch();
+        HttpServletResponse outboundResponse = EasyMock.createNiceMock(HttpServletResponse.class);
+        AsyncContext asyncContext = this.getAsyncContext(latch, outboundResponse);
+        HttpServletRequest inboundRequest = this.getHttpServletRequest(asyncContext);
+
+        replay(inboundRequest, asyncContext, outboundResponse);
+
+        sseDispatch.doGet(new URI("http://localhost:11223/sse"), inboundRequest, outboundResponse);
+
+        latch.await(1L, TimeUnit.SECONDS);
+        EasyMock.verify(asyncContext, outboundResponse, inboundRequest);
+    }
+
+    private HttpServletRequest getHttpServletRequest(AsyncContext asyncContext) throws Exception {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("request", "header");
+        InputStream stream = new ByteArrayInputStream("{\"request\":\"body\"}".getBytes(StandardCharsets.UTF_8));
+        MockServletInputStream mockServletInputStream = new MockServletInputStream(stream);
+        HttpServletRequest inboundRequest = EasyMock.createNiceMock(HttpServletRequest.class);
+
+        EasyMock.expect(inboundRequest.getHeaderNames()).andReturn(Collections.enumeration(headers.keySet())).anyTimes();
+        EasyMock.expect(inboundRequest.startAsync()).andReturn(asyncContext).once();
+        EasyMock.expect(inboundRequest.getHeader("request")).andReturn("header").once();
+        EasyMock.expect(inboundRequest.getContentType()).andReturn("application/json").anyTimes();
+        EasyMock.expect(inboundRequest.getInputStream()).andReturn(mockServletInputStream).anyTimes();
+        EasyMock.expect(inboundRequest.getContentLength()).andReturn(mockServletInputStream.available()).anyTimes();
+        EasyMock.expect(inboundRequest.getServletContext()).andReturn(new MockServletContext()).anyTimes();
+
+        return inboundRequest;
+    }
+
+    private AsyncContext getAsyncContext(CountDownLatch latch, HttpServletResponse outboundResponse) {
+        AsyncContext asyncContext = EasyMock.createNiceMock(AsyncContext.class);
+
+        EasyMock.expect(asyncContext.getResponse()).andReturn(outboundResponse).anyTimes();
+        asyncContext.complete();
+        EasyMock.expectLastCall().andAnswer(() -> {
+            latch.countDown();
+            return null;
+        });
+
+        return asyncContext;
+    }
+
+    private HttpServletResponse getServletResponse(int statusCode) {
+        HttpServletResponse outboundResponse = EasyMock.createNiceMock(HttpServletResponse.class);
+
+        outboundResponse.setStatus(statusCode);
+        EasyMock.expectLastCall();
+
+        return outboundResponse;
+    }
+
+    private void expectResponseBodyAndHeader(PrintWriter printWriter, HttpServletResponse outboundResponse) throws Exception {
+        outboundResponse.addHeader("response", "header");
+        EasyMock.expectLastCall();
+        EasyMock.expect(outboundResponse.getWriter()).andReturn(printWriter).anyTimes();
+        printWriter.write("id:1\nevent:event1\ndata:data1");
+        EasyMock.expectLastCall();
+        printWriter.write("id:2\nevent:event2\ndata:data2");
+        EasyMock.expectLastCall();
+        printWriter.println('\n');
+        EasyMock.expectLastCall().times(2);
+    }
+
+    private SSEDispatch createDispatch() throws Exception {
         KeystoreService keystoreService = createMock(KeystoreService.class);
         expect(keystoreService.getTruststoreForHttpClient()).andReturn(null).once();
 
@@ -66,10 +478,6 @@ public class SSEDispatchTest {
 
         replay(keystoreService, gatewayConfig, gatewayServices, servletContext, filterConfig);
 
-        SSEDispatch sseDispatch = new SSEDispatch(filterConfig);
-        assertNotNull(sseDispatch.getAsyncClient());
-
-        sseDispatch.destroy();
-        assertFalse(((CloseableHttpAsyncClient) sseDispatch.getAsyncClient()).isRunning());
+        return new SSEDispatch(filterConfig);
     }
 }
