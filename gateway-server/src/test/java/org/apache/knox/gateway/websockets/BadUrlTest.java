@@ -27,6 +27,7 @@ import static org.apache.knox.gateway.config.GatewayConfig.DEFAULT_IDENTITY_KEY_
 import com.mycila.xmltool.XMLDoc;
 import com.mycila.xmltool.XMLTag;
 import org.apache.commons.io.FileUtils;
+import org.apache.knox.gateway.GatewayServer;
 import org.apache.knox.gateway.config.GatewayConfig;
 import org.apache.knox.gateway.config.impl.GatewayConfigImpl;
 import org.apache.knox.gateway.deploy.DeploymentFactory;
@@ -55,6 +56,7 @@ import javax.websocket.WebSocketContainer;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
@@ -189,7 +191,7 @@ public class BadUrlTest {
    * Initialize the configs and components required for this test.
    */
   private static void setupGatewayConfig(final String backend)
-      throws IOException {
+      throws Exception {
     services = new DefaultGatewayServices();
 
     URL serviceUrl = ClassLoader.getSystemResource("websocket-services");
@@ -318,6 +320,7 @@ public class BadUrlTest {
     EasyMock.replay(gatewayConfig);
 
     try {
+      setGatewayServices(services);
       services.init(gatewayConfig, options);
     } catch (ServiceLifecycleException e) {
       e.printStackTrace();
@@ -329,6 +332,12 @@ public class BadUrlTest {
     monitor.addTopologyChangeListener(topoListener);
     monitor.reloadTopologies();
 
+  }
+
+  private static void setGatewayServices(final GatewayServices gws) throws Exception {
+    Field gwsField = GatewayServer.class.getDeclaredField("services");
+    gwsField.setAccessible(true);
+    gwsField.set(null, gws);
   }
 
   private static File createDir() throws IOException {
