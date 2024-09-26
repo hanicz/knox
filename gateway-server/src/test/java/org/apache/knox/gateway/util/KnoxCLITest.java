@@ -73,7 +73,7 @@ public class KnoxCLITest {
   public void setUp() throws Exception {
     System.setOut(new PrintStream(outContent, false, StandardCharsets.UTF_8.name()));
     System.setErr(new PrintStream(errContent, false, StandardCharsets.UTF_8.name()));
-    this.setGatewayServicesToNull();
+   // this.setGatewayServicesToNull();
   }
 
   @Test
