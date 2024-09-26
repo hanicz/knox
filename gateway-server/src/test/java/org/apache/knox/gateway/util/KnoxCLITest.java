@@ -1341,11 +1341,11 @@ public class KnoxCLITest {
   }
 
 
-  private void setGatewayServicesToNull() throws Exception {
+  /*private void setGatewayServicesToNull() throws Exception {
     Field gwsField = GatewayServer.class.getDeclaredField("services");
     gwsField.setAccessible(true);
     gwsField.set(null, null);
-  }
+  }*/
 
   private static final String testDescriptorContentJSON = "{\n" +
                                                           "  \"discovery-address\":\"http://localhost:8080\",\n" +
