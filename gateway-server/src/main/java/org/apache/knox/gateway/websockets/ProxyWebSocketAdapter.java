@@ -190,6 +190,10 @@ public class ProxyWebSocketAdapter extends WebSocketAdapter {
   @Override
   public void onWebSocketClose(int statusCode, String reason) {
     super.onWebSocketClose(statusCode, reason);
+    /*if (frontendSession != null && !frontendSession.isOpen()) {
+      System.out.println("Called");
+      frontendSession.close(statusCode, reason);
+    }*/
     cleanup();
     LOG.onConnectionClose(backend.toString());
   }
@@ -206,7 +210,7 @@ public class ProxyWebSocketAdapter extends WebSocketAdapter {
 
     LOG.onError(t.toString());
     if (t.toString().contains("exceeds maximum size")) {
-      if(frontendSession != null && !frontendSession.isOpen()) {
+      if(frontendSession != null && frontendSession.isOpen()) {
         frontendSession.close(StatusCode.MESSAGE_TOO_LARGE, t.getMessage());
       }
     }

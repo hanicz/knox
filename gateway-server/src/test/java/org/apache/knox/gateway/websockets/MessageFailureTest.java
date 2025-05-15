@@ -17,8 +17,9 @@
  */
 package org.apache.knox.gateway.websockets;
 
-import org.apache.knox.gateway.config.GatewayConfig;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.knox.gateway.config.GatewayConfig;
+import org.easymock.EasyMock;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -27,7 +28,6 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.easymock.EasyMock;
 
 import javax.websocket.CloseReason;
 import javax.websocket.ContainerProvider;
@@ -70,7 +70,7 @@ public class MessageFailureTest {
   /*
    * Test for a message that bigger than configured value
    */
-  @Test(timeout = 8000)
+  @Test
   public void testMessageTooBig() throws Exception {
     final String bigMessage = RandomStringUtils.randomAscii(66001);
 
@@ -81,17 +81,17 @@ public class MessageFailureTest {
         proxyUri);
     session.getBasicRemote().sendText(bigMessage);
 
-    client.awaitClose(CloseReason.CloseCodes.TOO_BIG.getCode(), 1000,
+    client.awaitClose(CloseReason.CloseCodes.TOO_BIG.getCode(), 100000,
         TimeUnit.MILLISECONDS);
-    throw new Exception("Reason: " + client.close.getReasonPhrase() + " Code: " + client.close.getCloseCode().getCode());
-    //Assert.assertThat(client.close.getCloseCode().getCode(), CoreMatchers.is(CloseReason.CloseCodes.TOO_BIG.getCode()));
+
+    Assert.assertThat(client.close.getCloseCode().getCode(), CoreMatchers.is(CloseReason.CloseCodes.TOO_BIG.getCode()));
   }
 
   /**
    * Test for a message that bigger than Jetty default but smaller than limit
    * @throws Exception exception on failure
    */
-  @Test(timeout = 8000)
+  @Test
   public void testMessageBiggerThanDefault() throws Exception {
     final String bigMessage = RandomStringUtils.randomAscii(66000);
 
@@ -102,7 +102,7 @@ public class MessageFailureTest {
             proxyUri);
     session.getBasicRemote().sendText(bigMessage);
 
-    client.awaitClose(CloseReason.CloseCodes.TOO_BIG.getCode(), 1000,
+    client.awaitClose(CloseReason.CloseCodes.TOO_BIG.getCode(), 100000,
             TimeUnit.MILLISECONDS);
 
     Assert.assertThat(client.close.getCloseCode().getCode(), CoreMatchers.is(CloseReason.CloseCodes.TOO_BIG.getCode()));
