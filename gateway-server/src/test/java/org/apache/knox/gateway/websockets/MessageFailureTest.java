@@ -84,11 +84,9 @@ public class MessageFailureTest {
     client.awaitClose(CloseReason.CloseCodes.TOO_BIG.getCode(), 1000,
         TimeUnit.MILLISECONDS);
     System.out.println("Reason: " + client.close.getReasonPhrase());
+    System.out.println("Code: " + client.close.getCloseCode().getCode());
 
-    Assert.assertThat(client.close.getCloseCode().getCode(), CoreMatchers.anyOf(
-            CoreMatchers.is(CloseReason.CloseCodes.TOO_BIG.getCode()),
-            CoreMatchers.is(CloseReason.CloseCodes.CLOSED_ABNORMALLY.getCode()))
-    );
+    Assert.assertThat(client.close.getCloseCode().getCode(), CoreMatchers.is(CloseReason.CloseCodes.TOO_BIG.getCode()));
   }
 
   /**
