@@ -190,10 +190,6 @@ public class ProxyWebSocketAdapter extends WebSocketAdapter {
   @Override
   public void onWebSocketClose(int statusCode, String reason) {
     super.onWebSocketClose(statusCode, reason);
-    /*if (frontendSession != null && !frontendSession.isOpen()) {
-      System.out.println("Called");
-      frontendSession.close(statusCode, reason);
-    }*/
     cleanup();
     LOG.onConnectionClose(backend.toString());
   }
@@ -216,7 +212,7 @@ public class ProxyWebSocketAdapter extends WebSocketAdapter {
     }
 
     else {
-      if(frontendSession != null && !frontendSession.isOpen()) {
+      if(frontendSession != null && frontendSession.isOpen()) {
         frontendSession.close(StatusCode.SERVER_ERROR, t.getMessage());
       }
       cleanup();

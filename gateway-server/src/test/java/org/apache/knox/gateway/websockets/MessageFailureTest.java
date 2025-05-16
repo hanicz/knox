@@ -81,10 +81,8 @@ public class MessageFailureTest {
         proxyUri);
     session.getBasicRemote().sendText(bigMessage);
 
-    client.awaitClose(CloseReason.CloseCodes.TOO_BIG.getCode(), 100000,
-        TimeUnit.MILLISECONDS);
-
-    Assert.assertThat(client.close.getCloseCode().getCode(), CoreMatchers.is(CloseReason.CloseCodes.TOO_BIG.getCode()));
+    Assert.assertTrue(client.awaitExpectedClose(CloseReason.CloseCodes.TOO_BIG.getCode(), 100000L,
+            TimeUnit.MILLISECONDS));
   }
 
   /**
@@ -102,11 +100,8 @@ public class MessageFailureTest {
             proxyUri);
     session.getBasicRemote().sendText(bigMessage);
 
-    client.awaitClose(CloseReason.CloseCodes.TOO_BIG.getCode(), 100000,
-            TimeUnit.MILLISECONDS);
-
-    Assert.assertThat(client.close.getCloseCode().getCode(), CoreMatchers.is(CloseReason.CloseCodes.TOO_BIG.getCode()));
-
+    Assert.assertTrue(client.awaitExpectedClose(CloseReason.CloseCodes.TOO_BIG.getCode(), 100000L,
+            TimeUnit.MILLISECONDS));
   }
 
   /*
