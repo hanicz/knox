@@ -31,7 +31,7 @@
     </dispatch>
 
     <routes>
-        <route path="/pinot/"/>
+        <route path="/pinot/">
         <route path="/pinot/index.html"/>
         <route path="/pinot/assets/**"/>
         <route path="/pinot/static/**"/>
