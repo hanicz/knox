@@ -17,19 +17,25 @@
 package org.apache.knox.gateway.provider.federation;
 
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.knox.gateway.provider.federation.jwt.filter.JWTFederationFilter;
 import org.apache.knox.gateway.provider.federation.jwt.filter.JWTFederationFilter.TokenType;
 import org.apache.knox.gateway.provider.federation.jwt.filter.SignatureVerificationCache;
 import org.apache.knox.gateway.services.security.token.TokenMetadata;
 import org.apache.knox.gateway.services.security.token.TokenStateService;
+import org.apache.knox.test.mock.MockServletInputStream;
 import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Test;
 
 import javax.servlet.FilterConfig;
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
@@ -40,29 +46,29 @@ public class ClientIdAndClientSecretFederationFilterTest extends TokenIDAsHTTPBa
     @Override
     protected void setTokenOnRequest(HttpServletRequest request, String authUsername, String authPassword) {
         EasyMock.expect((Object)request.getHeader("Authorization")).andReturn("");
-        EasyMock.expect((Object)request.getContentType()).andReturn("application/x-www-form-urlencoded").anyTimes();
-        ensureClientCredentials(request, authPassword, false);
-    }
-
-    private void ensureClientCredentials(final HttpServletRequest request, final String clientSecret) {
-        ensureClientCredentials(request, clientSecret, true);
-    }
-
-    private void ensureClientCredentials(final HttpServletRequest request, final String clientSecret, final boolean excludeQueryString) {
-        EasyMock.expect(request.getParameter(JWTFederationFilter.GRANT_TYPE)).andReturn(JWTFederationFilter.CLIENT_CREDENTIALS).anyTimes();
-        EasyMock.expect(request.getParameter(JWTFederationFilter.CLIENT_SECRET)).andReturn(clientSecret).anyTimes();
-        if (excludeQueryString) {
-            EasyMock.expect(request.getQueryString()).andReturn(null).anyTimes();
+        try {
+          EasyMock.expect(request.getInputStream()).andAnswer(() -> produceServletInputStream(authPassword)).atLeastOnce();
+        } catch (IOException e) {
+          throw new RuntimeException("Error while setting up expectation for getting client credentials from request body", e);
         }
+    }
+
+    private ServletInputStream produceServletInputStream(String clientSecret) {
+      final String requestBody = JWTFederationFilter.GRANT_TYPE + "=" + JWTFederationFilter.CLIENT_CREDENTIALS + "&" + JWTFederationFilter.CLIENT_SECRET + "="
+          + clientSecret;
+      final InputStream inputStream = IOUtils.toInputStream(requestBody, StandardCharsets.UTF_8);
+      return new MockServletInputStream(inputStream);
     }
 
     @Test
     public void testGetWireTokenUsingClientCredentialsFlow() throws Exception {
+      final String clientID = "client_id=clientID";
       final String clientSecret = "sup3r5ecreT!";
       final HttpServletRequest request = EasyMock.createNiceMock(HttpServletRequest.class);
-      ensureClientCredentials(request, clientSecret);
-      EasyMock.expect(request.getHeader("Authorization")).andReturn(null).anyTimes();
+      EasyMock.expect(request.getInputStream()).andAnswer(() -> produceServletInputStream(clientSecret + "&" +
+              clientID)).atLeastOnce();
       EasyMock.replay(request);
+
       handler.init(new TestFilterConfig(getProperties()));
       final Pair<TokenType, String> wireToken = ((TestJWTFederationFilter) handler).getWireToken(request);
 
@@ -99,8 +105,8 @@ public class ClientIdAndClientSecretFederationFilterTest extends TokenIDAsHTTPBa
 
         // LJM TODO: this will be needed later for client credentials as Basic auth header
         //EasyMock.expect(request.getHeader("Authorization")).andReturn(authTokenType + passcodeToken);
-        ensureClientCredentials(request, passcodeToken);
-        EasyMock.expect(request.getParameter("client_id")).andReturn(tokenId).anyTimes();
+        EasyMock.expect(request.getInputStream()).andAnswer(() -> produceServletInputStream(passcodeToken +
+                "&client_id=" + tokenId)).atLeastOnce();
 
         final HttpServletResponse response = EasyMock.createNiceMock(HttpServletResponse.class);
 //        response.setStatus(HttpServletResponse.SC_OK);
@@ -143,8 +149,8 @@ public class ClientIdAndClientSecretFederationFilterTest extends TokenIDAsHTTPBa
 
         // LJM TODO: this will be needed later for client credentials as Basic auth header
         //EasyMock.expect(request.getHeader("Authorization")).andReturn(authTokenType + passcodeToken);
-        ensureClientCredentials(request, passcodeToken);
-        EasyMock.expect(request.getParameter("client_id")).andReturn(tokenId + "invalidating_string").anyTimes();
+        EasyMock.expect(request.getInputStream()).andAnswer(() -> produceServletInputStream(passcodeToken +
+                "&client_id=" + tokenId + "invalidating_string")).atLeastOnce();
 
         final HttpServletResponse response = EasyMock.createNiceMock(HttpServletResponse.class);
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
@@ -165,8 +171,7 @@ public class ClientIdAndClientSecretFederationFilterTest extends TokenIDAsHTTPBa
     @Test(expected = SecurityException.class)
     public void shouldFailIfClientSecretIsPassedInQueryParams() throws Exception {
       final HttpServletRequest request = EasyMock.createNiceMock(HttpServletRequest.class);
-      final String queryString = "test=test&client_secret=sup3r5ecreT&otherTest=otherTestQueryParam";
-      EasyMock.expect(request.getQueryString()).andReturn(queryString).anyTimes();
+      EasyMock.expect((Object)request.getParameter("client_secret")).andReturn("sup3r5ecreT!");
       EasyMock.replay(request);
 
       handler.init(new TestFilterConfig(getProperties()));
