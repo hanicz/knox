@@ -45,10 +45,12 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.knox.gateway.UrlEncodedFormRequest;
 import org.apache.knox.gateway.i18n.messages.MessagesFactory;
 import org.apache.knox.gateway.provider.federation.jwt.JWTMessages;
 import org.apache.knox.gateway.security.PrimaryPrincipal;
@@ -56,6 +58,7 @@ import org.apache.knox.gateway.services.security.token.UnknownTokenException;
 import org.apache.knox.gateway.services.security.token.impl.JWT;
 import org.apache.knox.gateway.services.security.token.impl.JWTToken;
 import org.apache.knox.gateway.util.AuthFilterUtils;
+import org.apache.knox.gateway.util.CachingServletRequestWrapper;
 import org.apache.knox.gateway.util.CertificateUtils;
 import org.apache.knox.gateway.util.CookieUtils;
 import org.apache.knox.gateway.util.RequestBodyUtils;
@@ -216,10 +219,14 @@ public class JWTFederationFilter extends AbstractJWTFilter {
     }
 
     Pair<TokenType, String> wireToken = null;
+    HttpServletRequest requestWrapper = (request instanceof UrlEncodedFormRequest) ?
+            new CachingServletRequestWrapper((HttpServletRequest) request)
+            : (HttpServletRequest) request;
+
     try {
-      wireToken = getWireToken(request);
+      wireToken = getWireToken(requestWrapper);
     } catch (SecurityException e) {
-      handleValidationError((HttpServletRequest) request, (HttpServletResponse) response, HttpServletResponse.SC_BAD_REQUEST, null);
+      handleValidationError(requestWrapper, (HttpServletResponse) response, HttpServletResponse.SC_BAD_REQUEST, null);
       throw e;
     }
 
@@ -230,9 +237,9 @@ public class JWTFederationFilter extends AbstractJWTFilter {
       if (TokenType.JWT.equals(tokenType)) {
         try {
           JWT token = new JWTToken(tokenValue);
-          if (validateToken((HttpServletRequest) request, (HttpServletResponse) response, chain, token)) {
+          if (validateToken(requestWrapper, (HttpServletResponse) response, chain, token)) {
             Subject subject = createSubjectFromToken(token);
-            continueWithEstablishedSecurityContext(subject, (HttpServletRequest) request, (HttpServletResponse) response, chain);
+            continueWithEstablishedSecurityContext(subject, requestWrapper, (HttpServletResponse) response, chain);
           }
         } catch (ParseException | UnknownTokenException ex) {
           ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
@@ -249,16 +256,16 @@ public class JWTFederationFilter extends AbstractJWTFilter {
           passcode = decodeBase64(base64DecodedTokenIdAndPasscode[1]);
           // if this is a client credentials flow request then ensure the presented clientId is
           // the actual owner of the client_secret
-          prechecks = validateClientCredentialsFlow((HttpServletRequest) request, (HttpServletResponse) response, tokenId);
+          prechecks = validateClientCredentialsFlow(requestWrapper, (HttpServletResponse) response, tokenId);
         } catch (Exception e) {
           log.failedToParsePasscodeToken(e);
-          handleValidationError((HttpServletRequest) request, (HttpServletResponse) response, HttpServletResponse.SC_UNAUTHORIZED,
+          handleValidationError(requestWrapper, (HttpServletResponse) response, HttpServletResponse.SC_UNAUTHORIZED,
               "Error while parsing the received passcode token");
         }
-        if (prechecks && validateToken((HttpServletRequest) request, (HttpServletResponse) response, chain, tokenId, passcode)) {
+        if (prechecks && validateToken(requestWrapper, (HttpServletResponse) response, chain, tokenId, passcode)) {
           try {
             Subject subject = createSubjectFromTokenIdentifier(tokenId);
-            continueWithEstablishedSecurityContext(subject, (HttpServletRequest) request, (HttpServletResponse) response, chain);
+            continueWithEstablishedSecurityContext(subject, requestWrapper, (HttpServletResponse) response, chain);
           } catch (UnknownTokenException e) {
             ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
           }
@@ -274,6 +281,9 @@ public class JWTFederationFilter extends AbstractJWTFilter {
   private boolean validateClientCredentialsFlow(HttpServletRequest request, HttpServletResponse response, String tokenId)
        throws IOException {
     boolean validated = true;
+    if(!UrlEncodedFormRequest.isUrlEncodedForm(request)) {
+      return false;
+    }
     final String requestBodyString = getRequestBodyString(request);
     if (requestBodyString != null && !requestBodyString.isEmpty()) {
       final String grantType = RequestBodyUtils.getRequestBodyParameter(requestBodyString, GRANT_TYPE);
@@ -354,6 +364,9 @@ public class JWTFederationFilter extends AbstractJWTFilter {
 
     private Pair<TokenType, String> getClientCredentialsFromRequestBody(ServletRequest request) throws IOException {
       try {
+        if(!UrlEncodedFormRequest.isUrlEncodedForm(request)) {
+          return null;
+        }
         final String requestBodyString = getRequestBodyString(request);
         final String grantType = RequestBodyUtils.getRequestBodyParameter(requestBodyString, GRANT_TYPE);
         if (CLIENT_CREDENTIALS.equals(grantType)) {
