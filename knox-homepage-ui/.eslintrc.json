@@ -19,8 +19,12 @@
         "@typescript-eslint/naming-convention": [
           "error",
           {
-            "selector": ["class"],
-            "format": ["PascalCase"]
+            "selector": [
+              "class"
+            ],
+            "format": [
+              "PascalCase"
+            ]
           }
         ],
         "spaced-comment": "error",
@@ -30,15 +34,26 @@
         "no-unused-labels": "error",
         "max-len": [
           "error",
-          { "code": 140 }
+          {
+            "code": 140
+          }
         ],
         "@typescript-eslint/explicit-member-accessibility": [
           "off",
-          {"accessibility": "no-public"}
+          {
+            "accessibility": "no-public"
+          }
         ],
         "@typescript-eslint/member-ordering": [
           "error",
-          { "default": ["static-field", "instance-field", "field", "method"] }
+          {
+            "default": [
+              "static-field",
+              "instance-field",
+              "field",
+              "method"
+            ]
+          }
         ],
         "no-caller": "error",
         "no-bitwise": "error",
@@ -56,11 +71,26 @@
         "no-unused-expressions": "error",
         "no-var": "error",
         "sort-keys": "off",
-        "brace-style": ["error","1tbs", { "allowSingleLine": true }],
-        "quotes": ["error", "single"],
+        "brace-style": [
+          "error",
+          "1tbs",
+          {
+            "allowSingleLine": true
+          }
+        ],
+        "quotes": [
+          "error",
+          "single"
+        ],
         "radix": "error",
         "@typescript-eslint/semi": "error",
-        "eqeqeq": ["error", "always", {"null": "ignore"}],
+        "eqeqeq": [
+          "error",
+          "always",
+          {
+            "null": "ignore"
+          }
+        ],
         "@typescript-eslint/type-annotation-spacing": "error",
         "@angular-eslint/directive-selector": [
           "error",
