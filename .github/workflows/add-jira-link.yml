@@ -1,0 +1,43 @@
+name: "Add JIRA link to PR description"
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+jobs:
+  update-description:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract JIRA ID and update PR description
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JIRA_BASE_URL: "https://issues.apache.org/jira/browse"
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_BODY="${{ github.event.pull_request.body }}"
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          REPO=${{ github.repository }}
+
+          # Extract JIRA ID (e.g., KNOX-1234)
+          JIRA_ID=$(echo "$PR_TITLE" | grep -oE '[A-Z]+-[0-9]+')
+
+          if [ -n "$JIRA_ID" ]; then
+            echo "Found JIRA ID: $JIRA_ID"
+
+            # Create markdown link to Apache JIRA
+            JIRA_LINK="[${JIRA_ID}](${JIRA_BASE_URL}/${JIRA_ID})"
+
+            # Check if already in the description
+            if ! echo "$PR_BODY" | grep -q "$JIRA_ID"; then
+              NEW_BODY="JIRA Ticket: ${JIRA_LINK}"$'\n\n'"$PR_BODY"
+
+              echo "Updating PR description..."
+              gh api repos/$REPO/pulls/$PR_NUMBER \
+                -X PATCH \
+                -F body="$NEW_BODY"
+            else
+              echo "JIRA link already present in description."
+            fi
+          else
+            echo "No JIRA ID found in title."
+          fi
