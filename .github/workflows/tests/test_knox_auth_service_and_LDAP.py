@@ -37,8 +37,6 @@ class TestKnoxAuthService(unittest.TestCase):
         self.knox = Knox("compose-knox-1")
         ip = self.knox.get_knox_container_ip_address()
         self.base_url = f"https://{ip}:8443/"
-        if not self.base_url.endswith("/"):
-            self.base_url += "/"
         # The topology name is based on the filename knoxldap.xml
         self.topology_url = self.base_url + "gateway/knoxldap/auth/api/v1/extauthz"
 

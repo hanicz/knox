@@ -34,8 +34,6 @@ class TestKnoxConfigs(unittest.TestCase):
         self.knox = Knox("compose-knox-1")
         ip = self.knox.get_knox_container_ip_address()
         self.base_url = f"https://{ip}:8443/"
-        if not self.base_url.endswith("/"):
-            self.base_url += "/"
         self.non_existent_path = self.base_url + "gateway/not-exists"
 
     def test_global_hsts_header(self):

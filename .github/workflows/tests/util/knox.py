@@ -15,6 +15,7 @@
 import requests
 import docker
 import logging
+import time
 
 class Knox:
 
@@ -32,6 +33,7 @@ class Knox:
         :return:
         """
         op = self.knox_container.exec_run(f"{knox_cmd}", stream=True)
+        time.sleep(0.5)
         return op
 
     def get_knox_container_ip_address(self):
