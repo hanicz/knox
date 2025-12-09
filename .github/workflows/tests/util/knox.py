@@ -34,3 +34,6 @@ class Knox:
         op = self.knox_container.exec_run(f"{knox_cmd}", stream=True)
         return op
 
+    def get_knox_container_ip_address(self):
+        network_name = list(self.knox_container.attrs["NetworkSettings"]["Networks"].keys())[0]
+        return self.knox_container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"]
