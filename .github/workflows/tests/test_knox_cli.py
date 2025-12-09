@@ -38,7 +38,25 @@ class TestKnoxCLI(unittest.TestCase):
         """
         print(f"\nTesting create-alias command")
         cmd = "{} create-alias test_key --cluster cluster1 --value test_value --generate".format(self.knox_cli_path)
-        cmd_output = self.knox.run_knox_cmd(cmd)
-        self.assertIn("test_key has been successfully created.", cmd_output)
+        cmd_output = list(self.knox.run_knox_cmd(cmd).output)
+        self.assertTrue(self.check_cli_output(iter(cmd_output), 'test_key has been successfully created'))
         print(f"Verified create-alias command output contains new alias")
 
+    def check_cli_output(self, cmd_output, match_string=None):
+        """
+        Match the passed string against the output of knoxcli.sh execution
+        :param cmd_output: knoxcli.sh cmd output
+        :param match_string: String to match in knoxcli output
+        :return: True if match is found else False
+        """
+        expected_matches = False
+        while True:
+            try:
+                item = next(cmd_output)
+                print(f"{item}")
+                if match_string in str(item):
+                    expected_matches = True
+                    break
+            except StopIteration:
+                break
+        return expected_matches

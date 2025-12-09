@@ -14,6 +14,7 @@
 # limitations under the License.
 import requests
 import docker
+import logging
 
 class Knox:
 
@@ -23,14 +24,13 @@ class Knox:
         """
         client = docker.from_env()
         self.knox_container = client.containers.get(container_name)
+        self.logger = logging.getLogger(__name__)
 
     def run_knox_cmd(self, knox_cmd):
         """
         :param knox_cmd:
         :return:
         """
-        result = self.knox_container.exec_run(f"{knox_cmd}", stream=False)
-        output = result.output.decode()
-        print(f"\n[CMD={knox_cmd}] OUTPUT:\n{output}")
-        return output
+        op = self.knox_container.exec_run(f"{knox_cmd}", stream=True)
+        return op
 
