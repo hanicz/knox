@@ -21,6 +21,7 @@ from util.knox import Knox
 
 class TestKnoxCLI(unittest.TestCase):
     def setUp(self):
+        self.knox = Knox("compose-knox-1")
         self.knox_cli_path = "/knox-runtime/bin/knoxcli.sh"
 
     def test_knox_cli_create_alias(self):
