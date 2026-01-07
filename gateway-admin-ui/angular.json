@@ -55,7 +55,7 @@
               "node_modules/jquery/dist/jquery.min.js",
               "node_modules/bootstrap/dist/js/bootstrap.js",
               "node_modules/ace-builds/src-min/ace.js",
-              "node_modules/ace-builds/src-min/theme-monokai.js"              
+              "node_modules/ace-builds/src-min/theme-monokai.js"
             ]
           },
           "configurations": {
@@ -146,6 +146,12 @@
     },
     "@schematics/angular:resolver": {
       "typeSeparator": "."
+    },
+    "@angular-eslint/schematics:application": {
+      "setParserOptionsProject": true
+    },
+    "@angular-eslint/schematics:library": {
+      "setParserOptionsProject": true
     }
   }
 }
