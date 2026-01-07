@@ -36,7 +36,8 @@ import {ResourceTypesService} from './resourcetypes/resourcetypes.service';
             </div>
         </div>
     `,
-    providers: [TopologyService, ServiceDefinitionService, ResourceTypesService]
+    providers: [TopologyService, ServiceDefinitionService, ResourceTypesService],
+    standalone: false
 })
 
 export class AppComponent {
