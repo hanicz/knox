@@ -26,7 +26,8 @@ import {TabComponent} from './tab.component';
             </li>
         </ul>
 
-    `
+    `,
+    standalone: false
 })
 export class TabsComponent implements AfterContentInit {
 

@@ -81,7 +81,8 @@ import 'brace/mode/xml';
                 <button type="button" class="btn btn-primary btn-sm" (click)="deleteServiceDefConfirmModal.close()">Ok</button>
             </bs-modal-footer>
         </bs-modal>
-    `
+    `,
+    standalone: false
 })
 
 export class ServiceDefinitionDetailComponent implements OnInit {

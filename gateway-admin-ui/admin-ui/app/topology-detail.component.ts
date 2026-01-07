@@ -89,7 +89,8 @@ import * as ace from 'ace-builds';
                 </bs-modal-footer>
             </bs-modal>
         </div>
-    `
+    `,
+    standalone: false
 })
 export class TopologyDetailComponent implements OnInit, AfterViewInit {
     title = 'Topology Detail';

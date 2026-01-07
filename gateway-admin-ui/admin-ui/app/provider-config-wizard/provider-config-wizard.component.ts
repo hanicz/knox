@@ -37,7 +37,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 @Component({
     selector: 'app-provider-config-wizard',
     templateUrl: './provider-config-wizard.component.html',
-    styleUrls: ['./provider-config-wizard.component.css']
+    styleUrls: ['./provider-config-wizard.component.css'],
+    standalone: false
 })
 export class ProviderConfigWizardComponent implements OnInit {
     private static CATEGORY_STEP = 1;

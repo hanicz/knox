@@ -26,7 +26,8 @@ import {Component, Input} from '@angular/core';
     template: `
         <div [hidden]="!active" class="pane">
         </div>
-    `
+    `,
+    standalone: false
 })
 export class TabComponent {
     @Input('tabTitle') title: string;

@@ -40,7 +40,8 @@ import {TopologyService} from './topology.service';
                 </tbody>
             </table>
         </div>
-    `
+    `,
+    standalone: false
 })
 export class TopologyComponent implements OnInit {
 

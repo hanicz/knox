@@ -20,7 +20,8 @@ import {ResourceTypesService} from './resourcetypes.service';
 @Component({
     selector: 'app-resourcetypes',
     templateUrl: './resourcetypes.component.html',
-    styleUrls: ['./resourcetypes.component.css']
+    styleUrls: ['./resourcetypes.component.css'],
+    standalone: false
 })
 export class ResourcetypesComponent implements OnInit {
 

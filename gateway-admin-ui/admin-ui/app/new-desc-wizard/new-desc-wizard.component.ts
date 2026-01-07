@@ -28,7 +28,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 @Component({
     selector: 'app-new-desc-wizard',
     templateUrl: './new-desc-wizard.component.html',
-    styleUrls: ['./new-desc-wizard.component.css']
+    styleUrls: ['./new-desc-wizard.component.css'],
+    standalone: false
 })
 export class NewDescWizardComponent implements OnInit {
 

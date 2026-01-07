@@ -33,7 +33,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 @Component({
     selector: 'app-resource-detail',
     templateUrl: './resource-detail.component.html',
-    styleUrls: ['./resource-detail.component.css']
+    styleUrls: ['./resource-detail.component.css'],
+    standalone: false
 })
 
 export class ResourceDetailComponent implements OnInit {

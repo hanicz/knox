@@ -19,7 +19,10 @@ import {DomSanitizer} from '@angular/platform-browser';
 import {SessionInformationService} from './session.information.service';
 import {SessionInformation} from './session.information';
 
-@Pipe({ name: 'safeHtml' })
+@Pipe({
+    name: 'safeHtml',
+    standalone: false
+})
 export class SafeHtmlPipe implements PipeTransform {
   constructor(private sanitizer: DomSanitizer) {}
 
@@ -31,7 +34,8 @@ export class SafeHtmlPipe implements PipeTransform {
 @Component({
     selector: 'app-session-information',
     templateUrl: './session.information.component.html',
-    providers: [SessionInformationService]
+    providers: [SessionInformationService],
+    standalone: false
 })
 
 export class SessionInformationComponent implements OnInit {

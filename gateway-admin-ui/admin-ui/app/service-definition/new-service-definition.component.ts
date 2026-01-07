@@ -27,7 +27,8 @@ import * as ace from 'ace-builds';
 @Component({
     selector: 'app-service-definition-wizard',
     templateUrl: './new-service-definition.component.html',
-    styleUrls: ['./new-service-definition.component.css']
+    styleUrls: ['./new-service-definition.component.css'],
+    standalone: false
 })
 export class NewServiceDefinitionComponent implements OnInit {
 

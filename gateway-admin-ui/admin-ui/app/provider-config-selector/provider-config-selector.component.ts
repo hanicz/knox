@@ -25,7 +25,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 @Component({
     selector: 'app-provider-config-selector',
     templateUrl: './provider-config-selector.component.html',
-    styleUrls: ['./provider-config-selector.component.css']
+    styleUrls: ['./provider-config-selector.component.css'],
+    standalone: false
 })
 export class ProviderConfigSelectorComponent {
 

@@ -27,7 +27,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 @Component({
     selector: 'app-resource',
     templateUrl: './resource.component.html',
-    styleUrls: ['./resource.component.css']
+    styleUrls: ['./resource.component.css'],
+    standalone: false
 })
 export class ResourceComponent implements OnInit {
     resourceType: string;

@@ -25,7 +25,8 @@ import {GatewayVersionService} from './gateway-version.service';
             <span class="small"><cite>Version</cite> {{this.gatewayVersion.version}}</span>
             <span class="small"><cite>Hash</cite> {{this.gatewayVersion.hash}}</span>
         </div>`,
-    providers: [GatewayVersionService]
+    providers: [GatewayVersionService],
+    standalone: false
 })
 
 export class GatewayVersionComponent implements OnInit {
