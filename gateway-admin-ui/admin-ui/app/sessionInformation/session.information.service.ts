@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 import {Injectable} from '@angular/core';
-import {HttpClient, HttpErrorResponse, HttpHeaders} from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
 import 'rxjs/add/operator/toPromise';

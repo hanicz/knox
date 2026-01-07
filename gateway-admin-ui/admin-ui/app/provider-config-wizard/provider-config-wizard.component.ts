@@ -32,7 +32,7 @@ import {HostMapProviderWizard} from './hostmap-provider-wizard';
 import {ProviderContributorWizard} from './provider-contributor-wizard';
 import {WebAppSecurityWizard} from './webappsec-wizard';
 import {ValidationUtils} from '../utils/validation-utils';
-import {HttpErrorResponse} from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
     selector: 'app-provider-config-wizard',

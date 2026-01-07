@@ -23,7 +23,7 @@ import {ResourceService} from '../resource/resource.service';
 import {Resource} from '../resource/resource';
 import {ResourceTypesService} from '../resourcetypes/resourcetypes.service';
 import {ValidationUtils} from '../utils/validation-utils';
-import {HttpErrorResponse} from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
     selector: 'app-new-desc-wizard',

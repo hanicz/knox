@@ -17,7 +17,7 @@
 import {NgModule} from '@angular/core';
 import {DataTableModule} from 'angular2-datatable';
 import {BrowserModule} from '@angular/platform-browser';
-import {HttpClientModule, HttpClientXsrfModule} from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi, withXsrfConfiguration } from '@angular/common/http';
 import {FormsModule} from '@angular/forms';
 import {CustomFormsModule} from 'ng2-validation';
 import {APP_BASE_HREF} from '@angular/common';
@@ -50,17 +50,7 @@ import {ProviderConfigWizardComponent} from './provider-config-wizard/provider-c
 import {SessionInformationComponent} from './sessionInformation/session.information.component';
 import {SafeHtmlPipe} from './sessionInformation/session.information.component';
 
-@NgModule({
-    imports: [BrowserModule,
-        HttpClientModule,
-        HttpClientXsrfModule,
-        FormsModule,
-        CustomFormsModule,
-        BsModalModule,
-        AceEditorModule,
-        DataTableModule
-    ],
-    declarations: [AppComponent,
+@NgModule({ declarations: [AppComponent,
         TopologyComponent,
         TopologyDetailComponent,
         ServiceDefinitionDetailComponent,
@@ -80,18 +70,20 @@ import {SafeHtmlPipe} from './sessionInformation/session.information.component';
         SessionInformationComponent,
         SafeHtmlPipe
     ],
-    providers: [TopologyService,
+    bootstrap: [AppComponent,
+        GatewayVersionComponent,
+        SessionInformationComponent
+    ], imports: [BrowserModule,
+        FormsModule,
+        CustomFormsModule,
+        BsModalModule,
+        AceEditorModule,
+        DataTableModule], providers: [TopologyService,
         ServiceDefinitionService,
         GatewayVersionService,
         ResourceComponent,
         ResourceTypesService,
         ResourceService,
-        {provide: APP_BASE_HREF, useValue: '/'}
-    ],
-    bootstrap: [AppComponent,
-        GatewayVersionComponent,
-        SessionInformationComponent
-    ]
-})
+        { provide: APP_BASE_HREF, useValue: '/' }, provideHttpClient(withInterceptorsFromDi(), withXsrfConfiguration())] })
 export class AppModule {
 }

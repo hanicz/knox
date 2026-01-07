@@ -28,7 +28,7 @@ import 'brace/mode/xml';
 
 import {ProviderConfigSelectorComponent} from '../provider-config-selector/provider-config-selector.component';
 import {ResourceTypesService} from '../resourcetypes/resourcetypes.service';
-import {HttpErrorResponse} from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
     selector: 'app-resource-detail',

@@ -22,7 +22,7 @@ import {TopologyService} from '../topology.service';
 import {Topology} from '../topology';
 import {ServiceDefinitionService} from '../service-definition/servicedefinition.service';
 import {ServiceDefinition} from '../service-definition/servicedefinition';
-import {HttpErrorResponse} from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
     selector: 'app-resource',

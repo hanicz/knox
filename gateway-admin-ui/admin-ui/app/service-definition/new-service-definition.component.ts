@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import {BsModalComponent} from 'ng2-bs3-modal';
 import Swal from 'sweetalert2';
 

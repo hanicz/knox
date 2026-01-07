@@ -19,7 +19,7 @@ import {ResourceService} from '../resource/resource.service';
 import {Resource} from '../resource/resource';
 import {BsModalComponent} from 'ng2-bs3-modal';
 import {Descriptor} from '../resource-detail/descriptor';
-import {HttpErrorResponse} from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 
 
 @Component({
