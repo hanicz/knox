@@ -116,7 +116,6 @@
       }
     }
   },
-  "defaultProject": "admin-ui",
   "cli": {
     "schematicCollections": [
       "@angular-eslint/schematics",
