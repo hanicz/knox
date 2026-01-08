@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 import {Component, OnInit, ViewChild} from '@angular/core';
-import {BsModalComponent} from 'ng2-bs3-modal';
 import Swal from 'sweetalert2';
 
 import {ServiceDefinition} from './servicedefinition';
@@ -96,8 +95,8 @@ export class ServiceDefinitionDetailComponent implements OnInit {
 
     @ViewChild('editor') editor;
 
-    @ViewChild('deleteServiceDefConfirmModal')
-    deleteServiceDefConfirmModal: BsModalComponent;
+    /*@ViewChild('deleteServiceDefConfirmModal')
+    deleteServiceDefConfirmModal: BsModalComponent;*/
 
     constructor(private serviceDefinitionService: ServiceDefinitionService, private resourceTypesService: ResourceTypesService) {
     }

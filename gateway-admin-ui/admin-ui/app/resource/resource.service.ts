@@ -17,7 +17,7 @@
 import {Injectable} from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import 'rxjs/add/operator/toPromise';
-import {Subject} from 'rxjs/Subject';
+import { Subject } from 'rxjs';
 import {Resource} from './resource';
 import {ProviderConfig} from '../resource-detail/provider-config';
 import {Descriptor} from '../resource-detail/descriptor';

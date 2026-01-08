@@ -16,12 +16,10 @@
  */
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import {BsModalComponent} from 'ng2-bs3-modal';
 import Swal from 'sweetalert2';
 
 import {ServiceDefinitionService} from './servicedefinition.service';
 import {ResourceTypesService} from '../resourcetypes/resourcetypes.service';
-import * as ace from 'ace-builds';
 
 
 @Component({
@@ -38,8 +36,8 @@ export class NewServiceDefinitionComponent implements OnInit {
     theme: String = 'monokai';
     options: any = {useWorker: false, printMargin: false};
 
-    @ViewChild('newServiceDefinitionModal')
-    childModal: BsModalComponent;
+    /*@ViewChild('newServiceDefinitionModal')
+    childModal: BsModalComponent;*/
 
     @ViewChild('editor')
     editor: ElementRef<HTMLElement>;
@@ -55,17 +53,17 @@ export class NewServiceDefinitionComponent implements OnInit {
     }
 
     ngAfterViewInit(): void {
-        ace.config.set(
+     /*   ace.config.set(
             'basePath',
             'https://unpkg.com/ace-builds@1.4.12/src-noconflict'
         );
         const aceEditor = ace.edit(this.editor.nativeElement);
-        aceEditor.session.setMode('xml');
+        aceEditor.session.setMode('xml');*/
     }
 
     open(size?: string) {
         this.reset();
-        this.childModal.open(size ? size : 'lg');
+      /*  this.childModal.open(size ? size : 'lg');*/
     }
 
     reset() {

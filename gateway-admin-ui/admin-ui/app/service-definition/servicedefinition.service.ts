@@ -16,11 +16,10 @@
  */
 import {Injectable} from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import {RestURLBuilder} from 'rest-url-builder';
 import Swal from 'sweetalert2';
 
 import 'rxjs/add/operator/toPromise';
-import {Subject} from 'rxjs/Subject';
+import { Subject } from 'rxjs';
 
 import {ServiceDefinition} from './servicedefinition';
 
@@ -31,7 +30,7 @@ export class ServiceDefinitionService {
     serviceDefinitionUrlTemplate = this.serviceDefinitionsBaseUrl + '/:service/:role/:version';
     selectedServiceDefinitionSource = new Subject<ServiceDefinition>();
     selectedServiceDefinition$ = this.selectedServiceDefinitionSource.asObservable();
-    urlBuilder = new RestURLBuilder();
+    //urlBuilder = new RestURLBuilder();
 
     constructor(private http: HttpClient) {
     }
@@ -54,7 +53,7 @@ export class ServiceDefinitionService {
     }
 
     getServiceDefinitionXml(serviceDefinition: ServiceDefinition) {
-        let headers = new HttpHeaders();
+       /* let headers = new HttpHeaders();
         headers = this.addXmlHeaders(headers);
         let urlBuilder = this.urlBuilder.buildRestURL(this.serviceDefinitionUrlTemplate);
         urlBuilder.setNamedParameter('service', serviceDefinition.service);
@@ -71,7 +70,8 @@ export class ServiceDefinitionService {
                 } else {
                     return this.handleError(err);
                 }
-            });
+            });*/
+            return null;
     }
 
     saveNewServiceDefinition(xml: string): Promise<string> {
@@ -111,7 +111,7 @@ export class ServiceDefinitionService {
     }
 
     deleteServiceDefinition(serviceDefinition: ServiceDefinition): Promise<string> {
-        let xheaders = new HttpHeaders();
+      /*  let xheaders = new HttpHeaders();
         xheaders = this.addXmlHeaders(xheaders);
         let urlBuilder = this.urlBuilder.buildRestURL(this.serviceDefinitionUrlTemplate);
         urlBuilder.setNamedParameter('service', serviceDefinition.service);
@@ -128,7 +128,8 @@ export class ServiceDefinitionService {
                 } else {
                     return this.handleError(err);
                 }
-            });
+            });*/
+            return null;
     }
 
     selectedServiceDefinition(value: ServiceDefinition) {

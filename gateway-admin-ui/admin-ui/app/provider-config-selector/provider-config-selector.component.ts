@@ -17,7 +17,6 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {ResourceService} from '../resource/resource.service';
 import {Resource} from '../resource/resource';
-import {BsModalComponent} from 'ng2-bs3-modal';
 import {Descriptor} from '../resource-detail/descriptor';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -30,8 +29,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 })
 export class ProviderConfigSelectorComponent {
 
-    @ViewChild('chooseProviderConfigModal')
-    private childModal: BsModalComponent;
+    /*@ViewChild('chooseProviderConfigModal')
+    private childModal: BsModalComponent;*/
 
     private providerConfigs: Resource[];
 
@@ -52,7 +51,7 @@ export class ProviderConfigSelectorComponent {
             .then(result => this.providerConfigs = result)
             .catch((err: HttpErrorResponse) => console.debug('Error access provider configurations: ' + err));
 
-        this.childModal.open(size);
+//        this.childModal.open(size);
     }
 
     onClose() {

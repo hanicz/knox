@@ -18,7 +18,6 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {ResourceTypesService} from '../resourcetypes/resourcetypes.service';
 import {ResourceService} from '../resource/resource.service';
-import {BsModalComponent} from 'ng2-bs3-modal';
 import {ProviderConfig} from '../resource-detail/provider-config';
 import {AuthenticationWizard} from './authentication-wizard';
 import {CategoryWizard} from './category-wizard';
@@ -70,8 +69,8 @@ export class ProviderConfigWizardComponent implements OnInit {
             [ProviderConfigWizardComponent.CATEGORY_HOSTMAP, new HostMapProviderWizard() as CategoryWizard]
         ]);
 
-    @ViewChild('newProviderConfigModal')
-    childModal: BsModalComponent;
+  /*  @ViewChild('newProviderConfigModal')
+    childModal: BsModalComponent;*/
 
     private step = 0;
 
@@ -108,7 +107,7 @@ export class ProviderConfigWizardComponent implements OnInit {
 
     open(size?: string) {
         this.reset();
-        this.childModal.open(size ? size : 'lg');
+       // this.childModal.open(size ? size : 'lg');
     }
 
     reset() {
@@ -227,7 +226,7 @@ export class ProviderConfigWizardComponent implements OnInit {
                         }
                     }
                 });
-                this.childModal.close(); // close the dialog if there was no error
+              // this.childModal.close(); // close the dialog if there was no error
             }).catch((err: HttpErrorResponse) => {
                 this.existingReadOnlyProvider = (err.status === 409);
                 console.error('Error creating ' + newResource + ' : ' + err.message);

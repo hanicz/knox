@@ -18,9 +18,7 @@ import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/
 import {Topology} from './topology';
 import {TopologyService} from './topology.service';
 import {ResourceTypesService} from './resourcetypes/resourcetypes.service';
-import {BsModalComponent} from 'ng2-bs3-modal';
 import {ValidationUtils} from './utils/validation-utils';
-import * as ace from 'ace-builds';
 
 @Component({
     selector: 'app-topology-detail',
@@ -103,11 +101,11 @@ export class TopologyDetailComponent implements OnInit, AfterViewInit {
     theme: String = 'monokai';
     options: any = {useWorker: false, printMargin: false};
 
-    @ViewChild('duplicateModal')
+    /*@ViewChild('duplicateModal')
     duplicateModal: BsModalComponent;
 
     @ViewChild('deleteConfirmModal')
-    deleteConfirmModal: BsModalComponent;
+    deleteConfirmModal: BsModalComponent;*/
 
     @ViewChild('editor')
     editor: ElementRef<HTMLElement>;
@@ -120,12 +118,12 @@ export class TopologyDetailComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit(): void {
-        ace.config.set(
+       /* ace.config.set(
             'basePath',
             'https://unpkg.com/ace-builds@1.4.12/src-noconflict'
         );
         const aceEditor = ace.edit(this.editor.nativeElement);
-        aceEditor.session.setMode('xml');
+        aceEditor.session.setMode('xml');*/
     }
 
     getEditorVisibility(): string {
