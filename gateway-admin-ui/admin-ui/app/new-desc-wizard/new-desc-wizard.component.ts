@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 import {Component, OnInit, ViewChild} from '@angular/core';
-import {BsModalComponent} from 'ng2-bs3-modal';
 
 import {ProviderConfigSelectorComponent} from '../provider-config-selector/provider-config-selector.component';
 import {Descriptor} from '../resource-detail/descriptor';
@@ -80,8 +79,8 @@ export class NewDescWizardComponent implements OnInit {
         'ZEPPELINUI',
         'ZEPPELINWS'];
 
-    @ViewChild('newDescriptorModal')
-    childModal: BsModalComponent;
+    /*@ViewChild('newDescriptorModal')
+    childModal: BsModalComponent;*/
 
     @ViewChild('choosePC')
     chooseProviderConfigModal: ProviderConfigSelectorComponent;
@@ -105,7 +104,7 @@ export class NewDescWizardComponent implements OnInit {
 
     open(size?: string) {
         this.reset();
-        this.childModal.open(size ? size : 'lg');
+      //  this.childModal.open(size ? size : 'lg');
     }
 
     reset() {
@@ -158,7 +157,7 @@ export class NewDescWizardComponent implements OnInit {
                         }
                     }
                 });
-                this.childModal.close(); // close the dialog if there was no error
+             //   this.childModal.close(); // close the dialog if there was no error
             }).catch((err: HttpErrorResponse) => {
                 this.existingReadOnlyTopology = (err.status === 409);
                 console.error('Error creating ' + this.descriptorName + ' : ' + err.message);

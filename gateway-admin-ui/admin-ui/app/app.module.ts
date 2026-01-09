@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 import {NgModule} from '@angular/core';
-import {DataTableModule} from 'angular2-datatable';
 import {BrowserModule} from '@angular/platform-browser';
 import { provideHttpClient, withInterceptorsFromDi, withXsrfConfiguration } from '@angular/common/http';
 import {FormsModule} from '@angular/forms';
-import {CustomFormsModule} from 'ng2-validation';
 import {APP_BASE_HREF} from '@angular/common';
 
 import {AppComponent} from './app.component';
@@ -36,8 +34,6 @@ import {JsonPrettyPipe} from './utils/json-pretty.pipe';
 import {TabComponent} from './utils/tab.component';
 import {TabsComponent} from './utils/tabs.component';
 
-import {AceEditorModule} from 'ng2-ace-editor';
-import {BsModalModule} from 'ng2-bs3-modal';
 import {ResourcetypesComponent} from './resourcetypes/resourcetypes.component';
 import {ResourceTypesService} from './resourcetypes/resourcetypes.service';
 import {ResourceComponent} from './resource/resource.component';
@@ -74,16 +70,12 @@ import {SafeHtmlPipe} from './sessionInformation/session.information.component';
         GatewayVersionComponent,
         SessionInformationComponent
     ], imports: [BrowserModule,
-        FormsModule,
-        CustomFormsModule,
-        BsModalModule,
-        AceEditorModule,
-        DataTableModule], providers: [TopologyService,
+        FormsModule,], providers: [TopologyService,
         ServiceDefinitionService,
         GatewayVersionService,
         ResourceComponent,
         ResourceTypesService,
         ResourceService,
-        { provide: APP_BASE_HREF, useValue: '/' }, provideHttpClient(withInterceptorsFromDi(), withXsrfConfiguration())] })
+        { provide: APP_BASE_HREF, useValue: '/' }, provideHttpClient(withInterceptorsFromDi(), withXsrfConfiguration(null))] })
 export class AppModule {
 }
