@@ -16,6 +16,7 @@ import os
 import unittest
 import requests
 import urllib3
+from util.knox import Knox
 from requests.auth import HTTPBasicAuth
 
 ########################################################
@@ -32,9 +33,9 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class TestRemoteAuth(unittest.TestCase):
     def setUp(self):
-        self.base_url = os.environ.get("KNOX_GATEWAY_URL", "https://localhost:8443/")
-        if not self.base_url.endswith("/"):
-            self.base_url += "/"
+        self.knox = Knox("compose-knox-1")
+        ip = self.knox.get_knox_container_ip_address()
+        self.base_url = f"https://{ip}:8443/"
         self.topology_url = self.base_url + "gateway/remoteauth/auth/api/v1/pre"
 
     def test_remote_auth_success(self):
