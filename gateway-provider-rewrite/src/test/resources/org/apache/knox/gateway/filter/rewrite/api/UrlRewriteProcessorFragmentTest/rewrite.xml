@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<rules>
+  <rule dir="OUT" name="YARNUIV2/yarnuiv2/outbound/apps/history">
+    <match pattern="/proxy/{**}?{**}">
+      <rewrite template="{$frontend[url]}/yarnuiv2/proxy/{**}?{**}"/>
+    </match>
+  </rule>
+</rules>
