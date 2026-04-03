@@ -16,6 +16,7 @@ import os
 import unittest
 import requests
 import urllib3
+from util.knox import Knox
 
 # Suppress InsecureRequestWarning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -26,7 +27,9 @@ class TestKnoxHealth(unittest.TestCase):
         Basic health check to ensure Knox is up and running.
         We expect a response 200 to indicate the server is up.
         """
-        url = os.environ.get("KNOX_GATEWAY_URL", "https://localhost:8443/")
+        knox = Knox("compose-knox-1")
+        ip = knox.get_knox_container_ip_address()
+        url = f"https://{ip}:8443/"
         print(f"Checking connectivity to {url}...")
         try:
             response = requests.get(url + "health/v1/ping", verify=False, timeout=30)
