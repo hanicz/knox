@@ -17,10 +17,12 @@
  */
 package org.apache.knox.gateway.pac4j.config;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.knox.gateway.fips.FipsUtils;
 import org.apache.knox.gateway.i18n.messages.MessagesFactory;
 import org.apache.knox.gateway.pac4j.Pac4jMessages;
 import org.pac4j.config.client.PropertiesConstants;
@@ -37,6 +39,25 @@ public class SAML2ClientConfigurationDecorator implements ClientConfigurationDec
   private static Pac4jMessages log = MessagesFactory.get(Pac4jMessages.class);
   public static final String KEYSTORE_TYPE = "saml.keyStoreType";
 
+  private static final List<String> FIPS_SIGNATURE_ALGORITHMS = Arrays.asList(
+      "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+      "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384",
+      "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512");
+  private static final List<String> FIPS_DIGEST_METHODS = Arrays.asList(
+      "http://www.w3.org/2001/04/xmlenc#sha256",
+      "http://www.w3.org/2001/04/xmldsig-more#sha384",
+      "http://www.w3.org/2001/04/xmlenc#sha512");
+  private static final List<String> FIPS_BLACKLISTED_SIGNATURE_ALGORITHMS = Arrays.asList(
+      "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
+      "http://www.w3.org/2000/09/xmldsig#dsa-sha1",
+      "http://www.w3.org/2001/04/xmldsig-more#rsa-md5",
+      "http://www.w3.org/2001/04/xmldsig-more#rsa-ripemd160",
+      "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1",
+      "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256",
+      "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384",
+      "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512");
+  private static final String FIPS_CERTIFICATE_SIGNATURE_ALG = "SHA256withRSA";
+
   @Override
   public void decorateClients(List<Client> clients, Map<String, String> properties) {
     for (Client client : clients) {
@@ -48,8 +69,27 @@ public class SAML2ClientConfigurationDecorator implements ClientConfigurationDec
         setNameIdPolicyFormat(properties, saml2Client);
         setKeyStoreType(properties, saml2Client);
         setKeyStorePath(properties, saml2Client);
+        applyFipsAlgorithmRestrictions(saml2Client);
       }
     }
+  }
+
+  /**
+   * When Knox is running with a FIPS JCE provider, restrict the SAML2 client to
+   * RSA + SHA-2 signing and SHA-2 digests. EC algorithms are blacklisted because
+   * the FIPS JCE provider exposes neither BouncyCastle's EC API nor the
+   * non-FIPS curve set that opensaml-security-impl would otherwise register.
+   * The non-FIPS SHA-1 / MD5 / RIPEMD160 algorithms are blacklisted regardless.
+   */
+  private void applyFipsAlgorithmRestrictions(final SAML2Client saml2Client) {
+    if (!FipsUtils.isFipsEnabledWithBCProvider()) {
+      return;
+    }
+    saml2Client.getConfiguration().setSignatureAlgorithms(FIPS_SIGNATURE_ALGORITHMS);
+    saml2Client.getConfiguration().setSignatureReferenceDigestMethods(FIPS_DIGEST_METHODS);
+    saml2Client.getConfiguration().setBlackListedSignatureSigningAlgorithms(FIPS_BLACKLISTED_SIGNATURE_ALGORITHMS);
+    saml2Client.getConfiguration().setCertificateSignatureAlg(FIPS_CERTIFICATE_SIGNATURE_ALG);
+    log.pac4jSamlFipsAlgorithmsApplied();
   }
 
   private void setUseNameQualifierFlag(Map<String, String> properties, final SAML2Client saml2Client) {

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.apache.knox</groupId>
+        <artifactId>gateway</artifactId>
+        <version>3.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>gateway-shim-opensaml-security-api</artifactId>
+    <name>gateway-shim-opensaml-security-api</name>
+    <description>
+        A drop-in replacement for org.opensaml:opensaml-security-api that strips the
+        non-FIPS BouncyCastle-backed NamedCurve ServiceLoader registration and ships
+        an opensaml-config.properties resource which disables the remaining
+        BouncyCastle-dependent OpenSAML code paths (EC curve registration and the
+        ECDH KDF default). Required when running Knox with a FIPS JCE provider that
+        does not expose the standard BouncyCastle API.
+    </description>
+
+    <dependencies>
+        <!-- Compile scope is required so maven-shade-plugin includes the bytecode.
+             createDependencyReducedPom + promoteTransitiveDependencies=false in
+             the shade config below ensures this artifact is dropped from the
+             installed pom, so downstream modules do NOT pull the unshaded
+             opensaml-security-api jar alongside this shim. -->
+        <dependency>
+            <groupId>org.opensaml</groupId>
+            <artifactId>opensaml-security-api</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>shade-opensaml-security-api</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>true</createDependencyReducedPom>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
+                            <promoteTransitiveDependencies>false</promoteTransitiveDependencies>
+                            <artifactSet>
+                                <includes>
+                                    <include>org.opensaml:opensaml-security-api</include>
+                                </includes>
+                            </artifactSet>
+                            <filters>
+                                <filter>
+                                    <artifact>org.opensaml:opensaml-security-api</artifact>
+                                    <excludes>
+                                        <!-- Drop the SPI that registers AbstractNamedCurve
+                                             subclasses; each one's initialize() invokes
+                                             org.bouncycastle.jce.ECNamedCurveTable, which
+                                             is not present in a FIPS JCE provider. -->
+                                        <exclude>META-INF/services/org.opensaml.security.crypto.ec.NamedCurve</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

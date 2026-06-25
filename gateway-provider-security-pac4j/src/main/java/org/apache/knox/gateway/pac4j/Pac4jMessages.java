@@ -58,4 +58,8 @@ public interface Pac4jMessages {
 
   @Message( level = MessageLevel.DEBUG, text = "Pac4j keystore type : {0}")
   void pac4jSamlKeystoreType(String type);
+
+  @Message( level = MessageLevel.INFO, text =
+      "FIPS mode detected; restricting SAML2 signature/digest algorithms to FIPS-approved RSA + SHA-2 set")
+  void pac4jSamlFipsAlgorithmsApplied();
 }
