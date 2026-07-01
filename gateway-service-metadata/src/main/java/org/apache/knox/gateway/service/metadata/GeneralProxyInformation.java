@@ -55,6 +55,10 @@ public class GeneralProxyInformation {
   @ApiModelProperty(value = "A boolean flag indicating whether Webshell UI should be enabled on the Knox Home page")
   private String enableWebshell = "false";
 
+  @XmlElement
+  @ApiModelProperty(value = "The truststore type the homepage should offer for download (e.g. 'jks' or 'bcfks')")
+  private String truststoreType = "jks";
+
   public String getVersion() {
     return version;
   }
@@ -110,6 +114,14 @@ public class GeneralProxyInformation {
 
   public void setEnableWebshell(String enableWebshell) {
     this.enableWebshell = enableWebshell;
+  }
+
+  public String getTruststoreType() {
+    return truststoreType;
+  }
+
+  public void setTruststoreType(String truststoreType) {
+    this.truststoreType = truststoreType;
   }
 
 }
