@@ -40,9 +40,13 @@ import java.security.CodeSource;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.ProtectionDomain;
+import java.security.Provider;
+import java.security.Security;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -117,6 +121,8 @@ public class PingResource {
     Map<String, Object> report = new LinkedHashMap<>();
     report.put("bcprov", probeClass("org.bouncycastle.jce.ECNamedCurveTable"));
     report.put("bcpkix", probeClass("org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder"));
+    report.put("jceProviders", probeJceProviders());
+    report.put("fipsSystemProperty", System.getProperty("com.safelogic.cryptocomply.fips.approved_only"));
     report.put("openSaml", probeOpenSamlNamedCurveRegistry());
     try {
       return Response.ok(BCPROV_PROBE_MAPPER.writeValueAsString(report)).build();
@@ -186,6 +192,19 @@ public class PingResource {
       info.put("error", t.getClass().getName() + ": " + rootMessage(t));
     }
     return info;
+  }
+
+  private List<Map<String, Object>> probeJceProviders() {
+    List<Map<String, Object>> out = new ArrayList<>();
+    for (Provider p : Security.getProviders()) {
+      Map<String, Object> info = new LinkedHashMap<>();
+      info.put("name", p.getName());
+      info.put("class", p.getClass().getName());
+      info.put("version", String.valueOf(p.getVersionStr()));
+      info.put("source", codeSourceOf(p.getClass()));
+      out.add(info);
+    }
+    return out;
   }
 
   private static String rootMessage(Throwable t) {
