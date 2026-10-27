@@ -70,6 +70,9 @@ public class OAuthResource extends PasscodeTokenResourceBase {
         response = onlyAllowGroupsToBeAddedWhenEnabled();
         if (response != null) { return response; }
 
+        response = rejectInvalidTokenType();
+        if (response != null) { return response; }
+
         UserContext context = buildUserContext(request);
 
         response = enforceTokenLimitsAsRequired(context.userName);

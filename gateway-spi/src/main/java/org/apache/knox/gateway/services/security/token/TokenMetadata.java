@@ -150,17 +150,17 @@ public class TokenMetadata {
 
   @JsonIgnore
   public boolean isKnoxSsoCookie() {
-    return getType() != null && TokenMetadataType.KNOXSSO_COOKIE == TokenMetadataType.valueOf(getType());
+    return TokenMetadataType.KNOXSSO_COOKIE == getTokenType();
   }
 
   @JsonIgnore
   public boolean isClientId() {
-    return getType() != null && TokenMetadataType.CLIENT_ID == TokenMetadataType.valueOf(getType());
+    return TokenMetadataType.CLIENT_ID == getTokenType();
   }
 
   @JsonIgnore
   public boolean isAuthCode() {
-    return getType() != null && TokenMetadataType.AUTH_CODE == TokenMetadataType.valueOf(getType());
+    return TokenMetadataType.AUTH_CODE == getTokenType();
   }
 
   public String getType() {

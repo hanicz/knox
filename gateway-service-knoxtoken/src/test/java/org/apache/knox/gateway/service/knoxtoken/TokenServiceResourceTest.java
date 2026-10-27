@@ -213,6 +213,9 @@ public class TokenServiceResourceTest {
     if (contextExpectations.containsKey(TokenResource.KNOX_TOKEN_INCLUDE_GROUPS)) {
       EasyMock.expect(request.getParameter(TokenResource.KNOX_TOKEN_INCLUDE_GROUPS)).andReturn(contextExpectations.get(TokenResource.KNOX_TOKEN_INCLUDE_GROUPS)).anyTimes();
     }
+    if (contextExpectations.containsKey(TokenResource.TOKEN_TYPE_METADATA_QUERY_PARAM)) {
+      EasyMock.expect(request.getParameter(TokenResource.TOKEN_TYPE_METADATA_QUERY_PARAM)).andReturn(contextExpectations.get(TokenResource.TOKEN_TYPE_METADATA_QUERY_PARAM)).anyTimes();
+    }
     if (contextExpectations.containsKey(TokenResource.QUERY_PARAMETER_DOAS)) {
       EasyMock.expect(request.getParameter(TokenResource.QUERY_PARAMETER_DOAS)).andReturn(contextExpectations.get(TokenResource.QUERY_PARAMETER_DOAS)).anyTimes();
     }
@@ -2215,6 +2218,31 @@ public class TokenServiceResourceTest {
 
     Response response = tr.doGet();
     assertEquals(400, response.getStatus());
+  }
+
+  @Test
+  public void testBadRequestWhenInvalidTokenTypeIsRequested() throws Exception {
+    final Response response = requestTokenWithType("dummy");
+    assertEquals(400, response.getStatus());
+    assertTrue(response.getEntity().toString().contains(String.valueOf(TokenResource.ErrorCode.INVALID_TOKEN_TYPE.toInt())));
+    assertTrue(tss.getTokens(USER_NAME).isEmpty());
+  }
+
+  @Test
+  public void testTokenIssuedWhenValidTokenTypeIsRequested() throws Exception {
+    assertEquals(200, requestTokenWithType(TokenMetadataType.JWT.name()).getStatus());
+  }
+
+  private Response requestTokenWithType(String type) throws Exception {
+    final Map<String, String> contextExpectations = new HashMap<>();
+    contextExpectations.put(TokenResource.TOKEN_TYPE_METADATA_QUERY_PARAM, type);
+    configureCommonExpectations(contextExpectations, Boolean.TRUE);
+
+    final TokenResource tr = new TokenResource();
+    tr.request = request;
+    tr.context = context;
+    tr.init();
+    return tr.doGet();
   }
 
   @Test

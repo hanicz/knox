@@ -56,4 +56,13 @@ public class TokenMetadataTest {
     metadata.add(TokenMetadata.TYPE, "UNKNOWN_TYPE");
     assertEquals("Tokens with unknown type should be treated as JWTs", TokenMetadataType.JWT, metadata.getTokenType());
   }
+
+  @Test
+  public void testTypeCheckersWithUnknownType() {
+    final TokenMetadata metadata = new TokenMetadata();
+    metadata.add(TokenMetadata.TYPE, "dummy");
+    assertFalse(metadata.isKnoxSsoCookie());
+    assertFalse(metadata.isClientId());
+    assertFalse(metadata.isAuthCode());
+  }
 }

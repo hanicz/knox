@@ -164,6 +164,7 @@ public class TokenResource {
   static final String KNOX_TOKEN_USER_LIMIT_EXCEEDED_ACTION = TOKEN_PARAM_PREFIX + "user.limit.exceeded.action";
   private static final String KNOX_TOKEN_HARDCODED_CLAIM_MAPPINGS = TOKEN_PARAM_PREFIX + "hardcoded.claim.mappings";
   private static final String METADATA_QUERY_PARAM_PREFIX = "md_";
+  static final String TOKEN_TYPE_METADATA_QUERY_PARAM = METADATA_QUERY_PARAM_PREFIX + TokenMetadata.TYPE;
   private static final String TOKEN_ENABLE_DELEGATED_AUTH = TOKEN_PARAM_PREFIX + "enable.delegated.auth";
   static final String DELEGATION_MAX_ACTOR_CHAIN_DEPTH = "delegation.max.actor.chain.depth";
   static final int DELEGATION_MAX_ACTOR_CHAIN_DEPTH_DEFAULT = 3;
@@ -246,7 +247,8 @@ public class TokenResource {
     TOKEN_EXPIRED(90),
     INVALID_AUDIENCE(100),
     INVALID_RESOURCE(110),
-    ACTOR_CHAIN_DEPTH_EXCEEDED(120);
+    ACTOR_CHAIN_DEPTH_EXCEEDED(120),
+    INVALID_TOKEN_TYPE(130);
 
     private final int code;
 
@@ -958,6 +960,9 @@ public class TokenResource {
     response = onlyAllowGroupsToBeAddedWhenEnabled();
     if (response != null) { return response; }
 
+    response = rejectInvalidTokenType();
+    if (response != null) { return response; }
+
     UserContext context = buildUserContext(request);
 
     response = enforceTokenLimitsAsRequired(context.userName);
@@ -1056,6 +1061,22 @@ public class TokenResource {
               .build();
     }
     return response;
+  }
+
+  protected Response rejectInvalidTokenType() {
+    final String requestedType = request.getParameter(TOKEN_TYPE_METADATA_QUERY_PARAM);
+    if (requestedType == null || isValidTokenType(requestedType)) {
+      return null;
+    }
+    final String error = "Invalid " + TOKEN_TYPE_METADATA_QUERY_PARAM + " value; supported values are " + Arrays.toString(TokenMetadataType.values());
+    log.invalidTokenTypeRequested(getTopologyName(), requestedType);
+    return Response.status(Response.Status.BAD_REQUEST)
+        .entity(errorResponseBody(error, ErrorCode.INVALID_TOKEN_TYPE))
+        .build();
+  }
+
+  private static boolean isValidTokenType(String type) {
+    return Arrays.stream(TokenMetadataType.values()).anyMatch(t -> t.name().equals(type));
   }
 
   protected UserContext buildUserContext(HttpServletRequest request) {

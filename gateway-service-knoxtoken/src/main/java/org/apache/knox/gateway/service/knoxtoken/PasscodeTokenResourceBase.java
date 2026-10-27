@@ -128,6 +128,9 @@ public class PasscodeTokenResourceBase extends TokenResourceV2 {
         response = onlyAllowGroupsToBeAddedWhenEnabled();
         if (response != null) { return response; }
 
+        response = rejectInvalidTokenType();
+        if (response != null) { return response; }
+
         response = enforceTokenLimitsAsRequired(context.userName);
         if (response != null) { return response; }
 
